@@ -194,6 +194,11 @@ canvas{max-width:100%;height:auto !important;}
 .follow-mode{background:linear-gradient(135deg,#fff8e1,#e8f5e9);border:2px solid #a5d6a7;border-radius:16px;padding:20px;text-align:center;margin:14px 0;}
 .follow-mode .big-word{font-size:32px;font-weight:800;color:#2e7d32;margin:10px 0;}
 .follow-mode .big-sentence{font-size:16px;color:#558b2f;line-height:1.8;margin:10px 0;}
+.article-para{margin:16px 0;padding:12px;background:var(--bg1);border-radius:12px;border:1px solid var(--line);}
+.article-en{font-size:16px;line-height:1.9;margin:0 0 8px;color:var(--ink);}
+.article-en .word{display:inline-block;padding:0 1px;border-radius:3px;cursor:pointer;transition:background .15s;}
+.article-en .word:hover{background:var(--sky-soft);color:var(--sky-dept);}
+.article-zh{font-size:14px;line-height:1.8;margin:0;color:var(--muted);}
 
 /* ===== Modal System (replaces tiny prompt()) ===== */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(40,55,65,.45);z-index:999;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);justify-content:center;align-items:center;padding:20px;}
@@ -397,32 +402,34 @@ let planFilter='all';
 /* 用户默认每日计划模板（可在「⚙ 管理」中完全自定义：增/删/改、设必做或选做） */
 const DEFAULT_PLAN=[
   {time:'6:30-8:30',items:[
-    {t:'起床·揉腹·唤醒拉伸·拉窗帘',must:true},
-    {t:'晨间运动（上下齐发+大鹏展翅+扭转乾坤+前后击掌+扩胸各20下+超慢跑15-30min·每周3次）',must:true},
-    {t:'梳头30下·洗漱·护肤（身体保湿+面部防晒）',must:true},
-    {t:'写作500字·阅读投资10页·温水·早餐（粥/蛋）',must:true}
+    {t:'起床·唤醒拉伸·拉窗帘',must:true},
+    {t:'梳头30下·洗漱·护肤(保湿+防晒)',must:true},
+    {t:'晨间运动(上下齐发+大鹏展翅+扭转乾坤+前后击掌+扩胸各20下)',must:true},
+    {t:'晨间充电(写作500字·阅读投资10页)',must:true}
   ]},
   {time:'8:30-12:00',items:[
-    {t:'日计划·优先高价值工作（最复杂/最需专注任务先做）',must:true},
-    {t:'倒水·远眺·腹式呼吸10下·多维',must:true},
-    {t:'组合微运动（每小时活动+交叉踮脚+后抬踮脚+金鸡独立各20下+懒腰踮脚10下+穴位各30下）',must:false}
+    {t:'早餐(9:00前·粥+蛋)·倒水·多维',must:true},
+    {t:'组合运动(交叉踮脚+后抬踮脚+金鸡独立各20下+懒腰踮脚10下·劳宫穴+大鱼际+曲池穴+三阴交+神门穴各30下·腹式呼吸10下·每小时活动·远眺)',must:true},
+    {t:'日计划·优先高价值工作(最复杂任务先做)',must:true}
   ]},
   {time:'12:00-14:00',items:[
-    {t:'午餐（12:00前+七分饱+粗碳+优质蛋白+深绿蔬菜）',must:true},
-    {t:'漱口·午间运动（腹式呼吸10下+靠墙站立/散步10min+靠墙静蹲2min+靠墙俯卧撑50下+踢腿20下）+多邻国2单元+阅读投资10页',must:false},
-    {t:'揉腹·午休',must:true}
+    {t:'午餐(12:00前·七分饱·粗碳+优质蛋白+深绿色蔬菜)·漱口',must:true},
+    {t:'午间运动(腹式呼吸10下+站立/散步10min+靠墙静蹲2min+靠墙俯卧撑+前勾踢腿35下)',must:true},
+    {t:'午间充电(多邻国2单元·阅读投资10页)',must:true},
+    {t:'午休',must:true}
   ]},
   {time:'14:00-18:00',items:[
-    {t:'情报刷新·日复盘（记账+投资）',must:true},
-    {t:'倒水/泡茶·远眺·腹式呼吸10下·15:30西罗莫司',must:true},
-    {t:'组合微运动（每小时活动+眼操+耳操+淋巴疏通+握拳踮脚+仰天踮脚+单侧后抬各20下+懒腰踮脚10下）',must:false}
+    {t:'情报刷新·日复盘(投资·记账·复盘)',must:true},
+    {t:'倒水·西罗莫司(15:30)',must:true},
+    {t:'组合运动(眼操+耳操+淋巴操各8组·握拳踮脚+仰天踮脚+踢腿后抬各20下+懒腰踮脚10下·腹式呼吸10下·每小时活动·远眺)',must:true}
   ]},
   {time:'18:00-22:30',items:[
-    {t:'晚间运动（通勤骑车20-30min+欧阳春晓肩背15min·每周3次）',must:true},
-    {t:'晚餐（20:00前+少精制碳水）',must:true},
-    {t:'拉窗帘(20:30前调灯光)·梳头30下·卸妆·洗漱·洗澡',must:true},
-    {t:'护肤（保湿+面膜+提拉）·放松（涌泉穴+臀桥+摇腿+二郎腿各50下+睡前拉伸+还阳卧+金刚坐）·阅读投资10页',must:false},
-    {t:'揉腹·冥想（22:30前+正念478呼吸法）·保证7-8h优质睡眠',must:true}
+    {t:'晚间运动(骑车/超慢跑20-30min·每周3次)',must:true},
+    {t:'晚餐(20:00前+少精制碳水)',must:true},
+    {t:'拉窗帘(20:30前调灯光)·梳头30下·卸妆·洗漱·洗澡·护肤(保湿+面膜+提拉)',must:true},
+    {t:'睡前放松(金刚坐+欧阳春晓肩背15min·涌泉穴+臀桥+摇腿+二郎腿各50下·睡前拉伸·还阳卧+揉腹1-3次)',must:true},
+    {t:'保证7-8h优质睡眠',must:true},
+    {t:'阅读投资10页·冥想(22:30前+正念478呼吸法)',must:true}
   ]}
 ];
 function getPlanTpl(){return LS.get('plan_tpl',[]);}
@@ -648,30 +655,32 @@ function renderSleep(){
     let m=(wh*60+wm)-(bh*60+bm);if(m<0)m+=1440;return m;
   };
 
+  const autoDur=calcDur(today.bed,today.wake);
+  const durVal=today.dur!=null?today.dur:(autoDur!=null?autoDur/60:null);
   let h='<div class="card"><h3>睡眠记录</h3><div class="row">';
   h+='<input id="sl_bed" type="time" value="'+(today.bed||'22:30')+'" style="max-width:130px" placeholder="入睡">';
   h+='<input id="sl_wake" type="time" value="'+(today.wake||'07:00')+'" style="max-width:130px" placeholder="起床">';
+  h+='<input id="sl_dur" type="number" step="0.1" placeholder="时长(h)" value="'+(durVal!=null?durVal:'')+'" style="max-width:110px" title="手动输入睡眠时长，留空则按入睡/起床自动计算">';
   h+='<button class="btn primary" onclick="saveSleep()">保存今日</button></div>';
 
-  const dur=calcDur(today.bed,today.wake);
-  if(dur!==null){
-    const early=today.bed>='21:00'&&today.bed<='23:59'; // 21:00-23:00 入睡算早睡
-    const lateWake=today.wake>='07:00'&&today.wake<='12:00'; // 不早于7点起
-    const durOk=dur>=420&&dur<=600; // 7h-10h
+  if(durVal!=null){
+    const durMin=Math.round(durVal*60);
+    const early=today.bed>='21:00'&&today.bed<='23:59';
+    const durOk=durMin>=420&&durMin<=600;
     h+='<div class="row" style="flex-wrap:wrap;margin-top:8px">';
-    h+='<span class="chip on">时长 '+Math.floor(dur/60)+'h'+(dur%60)+'m</span>';
+    h+='<span class="chip on">时长 '+Math.floor(durMin/60)+'h'+(durMin%60)+'m</span>';
     h+='<span class="chip '+(early?'on':'')+'">早睡'+(early?' ✓':' (21点前)')+'</span>';
     h+='<span class="chip '+(durOk?'on':'')+'">时长达标'+(durOk?' ✓':' (7-10h)')+'</span>';
     h+='</div>';
   }
-  h+='<div class="note">早睡标准：21:00–23:00 入睡；时长达标：7–10 小时。连续天数自动统计。</div></div>';
+  h+='<div class="note">早睡标准：21:00–23:00 入睡；时长达标：7–10 小时。时长可手动输入（单位：小时），留空则按入睡/起床自动计算。</div></div>';
 
   // 近7日列表
   h+='<div class="card"><h3>近 7 日</h3>';
   const recent=logs.slice().reverse().slice(0,7);
   if(!recent.length)h+='<div class="empty">暂无记录</div>';
   recent.forEach(l=>{
-    const d=calcDur(l.bed,l.wake);
+    const d=l.dur!=null?Math.round(l.dur*60):calcDur(l.bed,l.wake);
     const early=l.bed>='21:00'&&l.bed<='23:59';
     const durOk=d>=420&&d<=600;
     h+='<div class="item"><div class="txt">'+l.date+' · '+l.bed+' → '+l.wake+'</div>';
@@ -682,17 +691,20 @@ function renderSleep(){
   $('bodySub').innerHTML=h;
 }
 function saveSleep(){
-  const bed=$('sl_bed').value,wake=$('sl_wake').value;if(!bed||!wake)return;
+  const bed=$('sl_bed').value,wake=$('sl_wake').value;
+  const durIn=$('sl_dur').value;
+  const dur=durIn!==''?Math.round(parseFloat(durIn)*100)/100:null;
+  if(!bed||!wake)return;
   const logs=getSleepLogs();
   const i=logs.findIndex(l=>l.date===todayStr());
-  const o={date:todayStr(),bed,wake};
+  const o={date:todayStr(),bed,wake,dur};
   if(i>=0)logs[i]=o;else logs.push(o);
   LS.set('sleep',logs);renderSleep();
 }
 
 // ---- 锻炼（今日 + 近7日 双视图）----
 let exView='today'; // today | week
-function getExTypes(){return LS.get('ex_types',[{id:'e1',name:'超慢跑'},{id:'e2',name:'通勤骑车'},{id:'e3',name:'肩背训练'},{id:'e4',name:'拉伸'},{id:'e5',name:'散步'}]);}
+function getExTypes(){return LS.get('ex_types',[{id:'e1',name:'超慢跑'},{id:'e2',name:'骑车'},{id:'e3',name:'肩背'},{id:'e4',name:'拉伸'},{id:'_other_',name:'其他'}]);}
 function getExLogs(){return LS.get('ex_logs',[]);}
 
 function renderExercise(){
@@ -706,10 +718,11 @@ function renderExercise(){
   h+='<div class="row" style="justify-content:flex-end"><button class="btn ghost sm" onclick="manageExTypes()">⚙ 类型管理</button></div></div>';
 
   // add form (always visible)
-  h+='<div class="card"><h3 style="margin:0">记录锻炼</h3><div class="row">';
-  h+='<select id="ex_type" style="max-width:140px">'+types.map(t=>'<option value="'+t.id+'">'+esc(t.name)+'</option>').join('')+'</select>';
-  h+='<input id="ex_dur" placeholder="时长min" style="max-width:95px" type="number">';
-  h+='<input id="ex_cal" placeholder="消耗kcal" style="max-width:95px" type="number">';
+  h+='<div class="card"><h3 style="margin:0">记录锻炼</h3><div class="row" style="flex-wrap:wrap;gap:6px">';
+  h+='<select id="ex_type" style="max-width:120px" onchange="if(this.value===\'_other_\')$(\'ex_custom\').style.display=\'\';else $(\'ex_custom\').style.display=\'none\';">'+types.map(t=>'<option value="'+t.id+'">'+esc(t.name)+'</option>').join('')+'</select>';
+  h+='<input id="ex_custom" placeholder="其他类型" style="max-width:120px;display:none">';
+  h+='<input id="ex_dur" placeholder="时长min" style="max-width:90px" type="number">';
+  h+='<input id="ex_cal" placeholder="消耗kcal" style="max-width:90px" type="number">';
   h+='<input id="ex_note" placeholder="备注" style="max-width:120px">';
   h+='<button class="btn primary" onclick="saveEx()">＋</button></div></div>';
 
@@ -792,8 +805,11 @@ function renderExercise(){
   });
 }
 function saveEx(){
-  const type=$('ex_type').value,dur=+$('ex_dur').value||0,cal=+$('ex_cal').value||0;
-  const note=$('ex_note').value.trim();if(!type)return;
+  let type=$('ex_type').value;
+  const custom=$('ex_custom').value.trim();
+  if(type==='_other_' && custom)type=custom;
+  const dur=+$('ex_dur').value||0,cal=+$('ex_cal').value||0;
+  const note=$('ex_note').value.trim();if(!type||type==='_other_'){if(!custom)return;}
   const all=getExLogs();all.push({date:todayStr(),type,dur,cal,note});
   LS.set('ex_logs',all);renderExercise();
 }
@@ -915,15 +931,16 @@ function renderDiet(){
   ck+='<button class="ck '+(dc.lunch?'on':'')+'" onclick="toggleDiet(\'lunch\')">'+(dc.lunch?'✓ ':'')+'午餐</button>';
   ck+='<button class="ck '+(dc.dinner?'on':'')+'" onclick="toggleDiet(\'dinner\')">'+(dc.dinner?'✓ ':'')+'晚餐</button>';
   ck+='<button class="ck '+(dc.mv?'on':'')+'" onclick="toggleDiet(\'mv\')">'+(dc.mv?'✓ ':'')+'多维</button>';
-  ck+='<span class="row" style="gap:4px;align-items:center"><button class="mini" onclick="stepWater(-1)">－</button><span class="chip">饮水 '+dc.water+' 杯</span><button class="mini" onclick="stepWater(1)">＋</button></span>';
+  ck+='<input id="d_water" type="number" step="0.1" value="'+(dc.water||'')+'" placeholder="饮水 L" style="max-width:90px" onchange="setWater(this.value)">';
   ck+='</div></div>';
   let h=ck+'<div class="card"><h3>饮食记录</h3>';
   h+='<div class="note">原则：七分饱 · 粗碳 · 优质蛋白 · 深绿蔬菜 · 少精制碳水</div>';
-  h+='<div class="row">';
-  h+='<input id="d_date" type="date" value="'+todayStr()+'" style="max-width:140px">';
-  h+='<select id="d_meal" style="max-width:90px"><option>早</option><option>午</option><option>晚</option><option>加餐</option></select>';
-  h+='<input id="d_food" placeholder="吃了什么" style="flex:1">';
-  h+='<input id="d_kcal" placeholder="kcal" type="number" style="max-width:78px">';
+  h+='<div class="row" style="flex-wrap:wrap;gap:6px">';
+  h+='<input id="d_date" type="date" value="'+todayStr()+'" style="max-width:120px">';
+  h+='<select id="d_meal" style="max-width:80px"><option>早</option><option>午</option><option>晚</option><option>加餐</option></select>';
+  h+='<input id="d_food" placeholder="吃了什么（可详细记录）" style="flex:1;min-width:140px">';
+  h+='<select id="d_healthy" style="max-width:110px"><option value="">健康均衡?</option><option value="是">是</option><option value="否">否</option><option value="部分">部分</option></select>';
+  h+='<input id="d_kcal" placeholder="kcal" type="number" style="max-width:80px">';
   h+='<button class="btn primary" onclick="saveDiet()">记录</button></div></div>';
 
   // 今日汇总
@@ -938,16 +955,20 @@ function renderDiet(){
   logs.slice().reverse().slice(0,20).forEach(x=>{
     const gi=logs.indexOf(x);
     h+='<div class="item"><div class="txt"><b>'+esc(x.date)+'</b> <span class="tag">'+esc(x.meal||'')+'</span> '+esc(x.food||'')+'</div>';
-    h+='<div class="meta">'+(x.kcal?x.kcal+'kcal':'')+'</div>';
+    h+='<div class="meta">'+(x.healthy?'<span class="chip">'+esc(x.healthy)+'</span> ':'')+(x.kcal?x.kcal+'kcal':'')+'</div>';
     h+='<button class="del" onclick="delDiet('+gi+')">✕</button></div>';
   });
   h+='</div>';
   $('bodySub').innerHTML=h;
 }
+function setWater(v){
+  const d=getDietChk()[todayStr()]||{bf:false,lunch:false,dinner:false,mv:false,water:0};
+  d.water=Math.max(0,parseFloat(v)||0);saveDietChk(d);renderDiet();
+}
 function saveDiet(){
-  const date=$('d_date').value,food=$('d_food').value.trim(),meal=$('d_meal').value,kcal=+$('d_kcal').value||0;
+  const date=$('d_date').value,food=$('d_food').value.trim(),meal=$('d_meal').value,kcal=+$('d_kcal').value||0,healthy=$('d_healthy').value;
   if(!food)return;
-  const logs=getDietLogs();logs.push({date,meal,food,kcal});LS.set('diet',logs);renderDiet();
+  const logs=getDietLogs();logs.push({date,meal,food,healthy,kcal});LS.set('diet',logs);renderDiet();
 }
 function delDiet(i){const logs=getDietLogs();logs.splice(i,1);LS.set('diet',logs);renderDiet();}
 
@@ -1330,14 +1351,11 @@ function getBooks(){return LS.get('books',[]);}
 function getCards(){return LS.get('cards',[]);}
 
 function renderRead(){
-  const rl=getReadLog()[todayStr()]||{morning:0,noon:0};
+  const checked=isReadChecked(todayStr());
   const rs=readStats();
-  let ck='<div class="card"><h3>今日阅读打卡（目标各10页）</h3><div class="row">';
-  ck+='<input id="rd_m" type="number" placeholder="晨间页数" value="'+(rl.morning||0)+'" style="max-width:120px">';
-  ck+='<input id="rd_n" type="number" placeholder="午间页数" value="'+(rl.noon||0)+'" style="max-width:120px">';
-  ck+='<button class="btn primary" onclick="saveReadToday(($(\'rd_m\').value||0),($(\'rd_n\').value||0));renderRead()">保存</button></div>';
-  ck+='<div class="row" style="flex-wrap:wrap;margin-top:6px"><span class="chip on">今日 '+((rl.morning||0)+(rl.noon||0))+' 页</span>';
-  ck+='<span class="chip">本周 '+rs.week+' 页</span><span class="chip">本月 '+rs.month+' 页</span><span class="chip">年度 '+rs.year+' 页</span></div></div>';
+  let ck='<div class="card"><h3>今日阅读打卡</h3><div class="row">';
+  ck+='<button class="ck '+(checked?'on':'')+'" onclick="toggleReadToday()">'+(checked?'✓ 今日已读':'○ 今日未读')+'</button>';
+  ck+='<span class="meta">本周 '+rs.week+' 天 · 本月 '+rs.month+' 天 · 年度 '+rs.year+' 天</span></div></div>';
   let h=ck+'<div class="card"><h3>阅读任务</h3><div class="subtabs">';
   [['books','书单'],['cards','卡片笔记'],['notes','读书笔记']].forEach(t=>{
     h+='<button class="'+(readTab===t[0]?'on':'')+'" data-rtab="'+t[0]+'">'+t[1]+'</button>';
@@ -1496,6 +1514,7 @@ function renderNotes(){
     h+='<div class="row"><b>'+(book?esc(book.title):'未知书籍')+'</b>';
     h+='<span class="meta">'+n.date+'</span>';
     h+='<span class="right"><button class="btn xs" onclick="viewNote('+i+')">打开</button>';
+    h+='<button class="btn xs" onclick="editNote('+i+')">编辑</button>';
     h+='<button class="del" onclick="delNote('+i+')">✕</button></span></div>';
     h+='<div class="meta" style="white-space:pre-wrap;margin-top:4px">'+esc(n.body).slice(0,500)+'</div>';
     h+='</div>';
@@ -1513,41 +1532,58 @@ function saveNote(){
   $('nt_body').value='';
   renderNotes();
 }
+function editNote(i){
+  const notes=LS.get('book_notes',[]);const n=notes[i];if(!n)return;
+  const b=getBooks();
+  const options=[{v:'',t:'（不关联）'}].concat(b.map(x=>({v:x.id,t:x.title})));
+  showModal({
+    title:'编辑读书笔记',
+    note:'修改后保存即可。',
+    fields:[
+      {id:'book',type:'select',label:'关联书籍',value:n.bookId||'',options:options},
+      {id:'date',type:'date',label:'日期',value:n.date||todayStr()},
+      {id:'body',type:'textarea',placeholder:'笔记内容…',value:n.body||''}
+    ],
+    onSave:function(f){
+      if(!f.body)return;
+      n.bookId=f.book||n.bookId;n.date=f.date||todayStr();n.body=f.body.trim();
+      LS.set('book_notes',notes);renderNotes();
+    }
+  });
+}
 function delNote(i){const notes=LS.get('book_notes',[]);notes.splice(i,1);LS.set('book_notes',notes);renderNotes();}
 
 /* 只读查看全文：写作 / 阅读写完后可点「打开」看完整内容 */
 function viewText(title,body){
   const ov=$('modalOverlay');
   ov.innerHTML='<div class="modal-box"><h3>'+esc(title)+'</h3>'+
-    '<textarea readonly style="min-height:52vh;font-size:16px;line-height:1.85">'+esc(body||'')+'</textarea>'+
+    '<div style="white-space:pre-wrap;max-height:62vh;overflow:auto;font-size:16px;line-height:1.85;padding:14px;border:1.5px solid var(--line);border-radius:12px;background:var(--bg1)">'+esc(body||'')+'</div>'+
     '<div class="modal-actions"><button class="btn primary" onclick="closeModal()">关闭</button></div></div>';
   ov.classList.add('show');
 }
-function viewWrite(i){const w=getWrites()[i];if(!w)return;const ov=$('modalOverlay');ov.innerHTML='<div class="modal-box"><h3>'+esc((w.title||'(无标题)')+' · '+w.date)+'</h3>'+'<div class="m-note">只读预览，点「编辑」可直接修改。</div>'+'<textarea readonly style="min-height:40vh;font-size:16px;line-height:1.85">'+esc(w.body||'')+'</textarea>'+'<div class="modal-actions"><button class="btn ghost" onclick="editWrite('+i+')">编辑</button><button class="btn primary" onclick="closeModal()">关闭</button></div></div>';ov.classList.add('show');}
-function editWrite(i){const w=getWrites()[i];if(!w)return;showModal({title:'编辑写作',note:'修改后点保存即可。',fields:[{id:'title',type:'text',placeholder:'标题（可选）',value:w.title||''},{id:'body',type:'textarea',placeholder:'内容…',value:w.body||''},{id:'date',type:'date',label:'日期',value:w.date||todayStr()}],onSave:function(f){if(!f.body&&!f.title)return;w.title=f.title.trim();w.body=f.body.trim();w.date=f.date||todayStr();LS.set('writes',getWrites());renderWrite();toast('已保存');}});}
+function viewWrite(i){const w=getWrites()[i];if(!w)return;const ov=$('modalOverlay');ov.innerHTML='<div class="modal-box"><h3>'+esc((w.title||'(无标题)')+' · '+w.date)+'</h3>'+'<div class="m-note">'+((w.body||'').length+' 字 · 只读预览，点「编辑」可直接修改')+'</div>'+'<div style="white-space:pre-wrap;max-height:58vh;overflow:auto;font-size:16px;line-height:1.85;padding:14px;border:1.5px solid var(--line);border-radius:12px;background:var(--bg1)">'+esc(w.body||'')+'</div>'+'<div class="modal-actions"><button class="btn ghost" onclick="editWrite('+i+')">编辑</button><button class="btn primary" onclick="closeModal()">关闭</button></div></div>';ov.classList.add('show');}
+function editWrite(i){const w=getWrites()[i];if(!w)return;showModal({title:'编辑写作',note:'修改后点保存即可。',fields:[{id:'title',type:'text',placeholder:'标题（可选）',value:w.title||''},{id:'body',type:'textarea',placeholder:'内容…',value:w.body||''},{id:'date',type:'date',label:'日期',value:w.date||todayStr()}],onSave:function(f){if(!f.body&&!f.title)return;w.title=f.title.trim();w.body=f.body.trim();w.date=f.date||todayStr();LS.set('writes',getWrites());syncWriteLog();renderWrite();toast('已保存');}});}
 function viewNote(i){const notes=LS.get('book_notes',[]);const n=notes[i];if(!n)return;const book=getBooks().find(x=>x.id===n.bookId);viewText('读书笔记 · '+(book?book.title:'(未知)')+' · '+n.date,n.body);}
 function viewCard(i){const c=getCards()[i];if(!c)return;const book=getBooks().find(x=>x.id===c.bookId);viewText('卡片笔记'+(book?' · '+book.title:'')+(c.tags?' · #'+c.tags:''),c.text);}
 
 
 /* ================================================================
-   模块 5：写作习惯（日记 / 灵感 / 影评 / 情绪 / 成就 + 选题推荐）
+   模块 5：写作入口（全部 / 情绪 / 灵感 / 投资 / 影评 + 自媒体转化）
+   字数自动联动：每日输入自动汇总到今日/本周/本月/年度
    ================================================================ */
-let writeTab='diary';
+let writeTab='all';
 function getWrites(){return LS.get('writes',[]);}
 function getDoneList(){return LS.get('done_list',[]);}
+function writeWordCount(date){return getWrites().filter(w=>w.date===date).reduce((s,w)=>s+(w.body||'').length,0);}
 
 function renderWrite(){
-  const wl=getWriteLog()[todayStr()]||0;
   const ws=writeStats();
-  let ck='<div class="card"><h3>今日写作打卡（目标500字）</h3><div class="row">';
-  ck+='<input id="wr_w" type="number" placeholder="今日字数" value="'+wl+'" style="max-width:120px">';
-  ck+='<button class="btn primary" onclick="saveWriteToday(($(\'wr_w\').value||0));renderWrite()">保存</button></div>';
-  ck+='<div class="row" style="flex-wrap:wrap;margin-top:6px"><span class="chip on">今日 '+wl+' 字</span>';
+  let ck='<div class="card"><h3>今日写作打卡（目标500字）</h3>';
+  ck+='<div class="row" style="flex-wrap:wrap;margin-top:6px"><span class="chip on">今日 '+(ws.today||0)+' 字</span>';
   ck+='<span class="chip">本周 '+ws.week+' 字</span><span class="chip">本月 '+ws.month+' 字</span><span class="chip">年度 '+ws.year+' 字</span><span class="chip">连续 '+ws.streak+' 天</span></div></div>';
-  let h=ck+'<div class="card"><h3>写作习惯</h3><div class="subtabs">';
+  let h=ck+'<div class="card"><h3>写作入口</h3><div class="subtabs">';
   [
-    ['review','电影影评'],['booknote','读书笔记'],['diary','日记'],
-    ['invest','投资笔记'],['inspire','灵感'],['emotion','情绪'],['topics','自媒体转化']
+    ['all','全部'],['emotion','情绪'],['inspire','灵感'],['invest','投资'],['review','影评'],['topics','自媒体转化']
   ].forEach(t=>{
     h+='<button class="'+(writeTab===t[0]?'on':'')+'" data-wtab="'+t[0]+'">'+t[1]+'</button>';
   });
@@ -1557,34 +1593,34 @@ function renderWrite(){
     btn.onclick=()=>{writeTab=btn.dataset.wtab;renderWrite();};
   });
   if(writeTab==='topics')renderTopics();
-  else if(writeTab==='achievement')renderAchievement();
   else renderWriteList(writeTab);
 }
 function setWriteTab(t){writeTab=t;renderWrite();}
 
 // 通用写作列表渲染
 function renderWriteList(type){
-  const typeNames={diary:'日记',inspire:'灵感',review:'电影影评',invest:'投资笔记',emotion:'情绪',booknote:'读书笔记'};
+  const typeNames={all:'全部',emotion:'情绪',inspire:'灵感',invest:'投资',review:'影评'};
   const name=typeNames[type]||type;
-  const list=getWrites().filter(w=>w.type===type).slice().reverse();
+  const list=getWrites().filter(w=>type==='all'||w.type===type).slice().reverse();
 
   let h='<div class="card"><div class="row" style="justify-content:space-between"><h3 style="margin:0">'+name+'</h3>';
-  h+='<button class="btn pink sm" onclick="addWrite(\''+type+'\')">+ 新'+name+'</button></div></div>';
+  h+='<button class="btn pink sm" onclick="addWrite(\''+(type==='all'?'emotion':type)+'\')">+ 新'+name+'</button></div></div>';
 
   h+='<div class="card" id="wlBox">';
   if(!list.length)h+='<div class="empty">还没有，写一篇吧 ✍️</div>';
   else{
     list.forEach(w=>{
       const gi=getWrites().indexOf(w);
-      h+='<div class="item" style="flex-direction:column;align-items:stretch">';
+      const typeTag={emotion:'情绪',inspire:'灵感',invest:'投资',review:'影评',booknote:'读书笔记',diary:'日记'}[w.type]||w.type;
+      h+='<div class="item" style="flex-direction:column;align-items:stretch" data-wid="'+w.id+'">';
       h+='<div class="row"><b>'+esc(w.title||'(无标题)')+'</b>';
-      h+='<span class="meta">'+w.date+'</span>';
+      h+='<span class="chip">'+typeTag+'</span>';
+      h+='<span class="meta">'+w.date+' · '+(w.body||'').length+' 字</span>';
       h+='<span class="right"><button class="btn xs" onclick="viewWrite('+gi+')">打开</button>';
       h+='<button class="btn xs" onclick="editWrite('+gi+')">编辑</button>';
-      h+='<button class="btn xs" onclick="xhsPreview('+gi+')">小红书</button>';
       h+='<button class="del" onclick="delWrite('+gi+')">✕</button></span></div>';
       const preview=w.body.length>200?w.body.slice(0,200)+'…':w.body;
-      h+='<div class="meta" style="white-space:pre-wrap;margin-top:4px">'+esc(preview)+'</div>';
+      h+='<div class="meta" style="white-space:pre-wrap;margin-top:4px;cursor:pointer" onclick="viewWrite('+gi+')">'+esc(preview)+'</div>';
       h+='</div>';
     });
   }
@@ -1592,7 +1628,7 @@ function renderWriteList(type){
   $('content').insertAdjacentHTML('beforeend',h);
 }
 function addWrite(type){
-  const names={diary:'日记',inspire:'灵感',review:'电影影评',emotion:'情绪',invest:'投资笔记',booknote:'读书笔记'};
+  const names={emotion:'情绪',inspire:'灵感',review:'影评',invest:'投资',booknote:'读书笔记',diary:'日记'};
   const name=names[type]||type;
   showModal({
     title:'写'+name,
@@ -1606,11 +1642,18 @@ function addWrite(type){
       if(!f.body)return;
       const w=getWrites();
       w.push({id:uid(),type,title:f.title.trim(),body:f.body.trim(),date:f.date||todayStr()});
-      LS.set('writes',w);renderWrite();
+      LS.set('writes',w);syncWriteLog();renderWrite();
     }
   });
 }
-function delWrite(i){const w=getWrites();w.splice(i,1);LS.set('writes',w);renderWrite();}
+function delWrite(i){const w=getWrites();w.splice(i,1);LS.set('writes',w);syncWriteLog();renderWrite();}
+function syncWriteLog(){
+  // 根据写作记录自动同步到 write_log，供统计与复盘使用
+  const all=getWrites();
+  const log={};
+  all.forEach(x=>{log[x.date]=(log[x.date]||0)+(x.body||'').length;});
+  LS.set('write_log',log);
+}
 
 // 成就清单(Donelist)
 function renderAchievement(){
@@ -1745,6 +1788,220 @@ function renderEnglish(){
   else renderQuery();
 }
 
+// BBC 每日精读（默认文章 + 实时查词 + 朗读/跟读 + 单词本联动）
+const DEFAULT_BBC_ARTICLE={
+  title:"How Mexican drug cartels have outsourced meth labs to Nigeria",
+  zhTitle:"墨西哥贩毒集团如何将冰毒实验室外包到尼日利亚",
+  date:"2026-07-29",
+  paragraphs:[
+    {en:"The Nigerian judge was formally dressed, the lawyers maintained legal decorum and protocol was followed – but this hearing was not in the comfortable confines of a Lagos courtroom, it was inside an alleged illicit drug laboratory in the thick of a dense forest. Three Mexicans and seven Nigerians were paraded in handcuffs, as Justice Musa Kakaki inspected the chemicals and equipment they were accused of using to produce methamphetamine, commonly known as meth or crystal meth. A bitter, pungent smell filled the air of the makeshift laboratory, thanks to a large drum of the liquid form of the drug that was crystallising.",
+     zh:"尼日利亚法官身着正式法袍，律师们保持法律礼仪，程序也按部就班——但这次听证并不在拉各斯舒适的法庭内，而是在一片茂密森林深处的涉嫌非法制毒实验室里。三名墨西哥人和七名尼日利亚人戴着手铐被押出，穆萨·卡奇法官正在检查他们被指控用于制造甲基苯丙胺（俗称冰毒或晶体冰毒）的化学品和设备。临时实验室里弥漫着刺鼻的苦味，因为一大桶液态毒品正在结晶。"},
+    {en:"This temporary move of the federal high court to a location a two-hour drive from Lagos was an unusual step for Nigeria's judicial system, but the National Drug Law Enforcement Agency (NDLEA) said it was necessary to understand the scale of the operation. When the suspects were arrested in May, the agency described it as the country's largest-ever meth bust. It said it discovered more than two tonnes of the drug worth some $360m (£270m).",
+     zh:"将联邦高等法院临时搬到距拉各斯两小时车程的地方，对尼日利亚司法系统来说不同寻常，但国家禁毒执法局（NDLEA）表示，有必要了解该行动的规模。嫌疑人于五月被捕，NDLEA称这是该国史上最大规模的冰毒查获行动，发现了价值约3.6亿美元（2.7亿英镑）的超过两吨毒品。"},
+    {en:"The raids underline a broader trend of Africa's, and particularly West Africa's, growing role in the global synthetic drugs trade and the shift by criminal cartels to use the continent, not just as a trafficking hub, but also as a production base. Mexican specialists in manufacturing methamphetamine, often described as \"cooks\", are increasingly being found working alongside locals in laboratories in Europe and Africa.",
+     zh:"这些突袭凸显了非洲、尤其是西非在全球合成毒品贸易中日益重要的角色，以及犯罪集团利用非洲大陆的转变——不仅是作为贩运枢纽，还作为生产基地。被称为“厨师”的墨西哥冰毒制造专家越来越多地出现在欧洲和非洲的实验室里，与当地人一起工作。"},
+    {en:"Meth production has become increasingly sophisticated over the last few decades. \"They perfected it, to the point now it is the highest purity, the highest potency version of meth,\" James Griego, who leads counter-narcotics operations for US-Africa Command, told the BBC. \"Anybody who is looking to consume methamphetamine, understands that the Mexican meth is the best in the world, for that purpose,\" Griego added.",
+     zh:"过去几十年，冰毒生产变得越来越精密。“他们已经将其完善到纯度最高、效力最强的版本，”美国非洲司令部（Africom）负责缉毒行动的詹姆斯·格里戈告诉 BBC。“任何想要吸食冰毒的人都知道，就这个用途而言，墨西哥冰毒是世界上最好的，”格里戈补充道。"},
+    {en:"Since 2023, there have been 14 Mexican-operated labs raided in Africa. Four of the five found this year were in Nigeria, according to Africom. Intelligence has linked some labs to Mexico's two biggest drug cartels: the Sinaloa Cartel and the Jalisco New Generation Cartel.",
+     zh:"自 2023 年以来，非洲已有 14 个墨西哥运营的实验室被突袭。据 Africom 称，今年发现的五个实验室中有四个在尼日利亚。情报已将其中一些实验室与墨西哥最大的两个贩毒集团——锡那罗亚集团和哈利斯科新一代集团——联系起来。"},
+    {en:"Unlike plant-based drugs, a synthetic drug like meth can be produced anywhere with the right chemicals and expertise. West Africa offers forested land for secluded sites, cheap labour, a large youth population, and access to Atlantic shipping routes.",
+     zh:"与可卡因或海洛因等植物类毒品不同，像冰毒这样的合成毒品只要有合适的化学品和专业知识就可以在任何地方生产。西非提供了森林覆盖的隐蔽场地、廉价劳动力、庞大的年轻人口，以及通往大西洋航运路线的便利。"},
+    {en:"In Europe, methamphetamine use rose 47% between 2014 and 2024. In east and south-east Asia, seizures reached a record high in 2024. \"It's a shortening of their supply line into Asia and a shortening of their pathway into Europe,\" Griego said.",
+     zh:"在欧洲，2014 年至 2024 年间冰毒使用量上升了 47%。在东亚和东南亚，2024 年查获量创下历史新高。“这缩短了他们进入亚洲的供应链，也缩短了进入欧洲的通路，”格里戈说。"},
+    {en:"With returning US pressure on Latin American cartels, experts believe tighter scrutiny of traditional trafficking routes may be driving cartels to diversify. The recent rise in raids on illicit labs in Africa could indicate that the cartels are becoming more entrenched on the continent.",
+     zh:"随着美国加大对拉丁美洲贩毒集团的压力，专家们认为，对传统贩运路线的更严格审查可能正促使集团实现多元化。非洲非法实验室突袭事件的近期增加，可能表明这些集团正在非洲大陆上越来越根深蒂固。"}
+  ]
+};
+
+function currentBBCArticle(){return LS.get('bbc_article',null)||DEFAULT_BBC_ARTICLE;}
+function allArticleText(a){return a.paragraphs.map(p=>p.en).join(' ');}
+
+function renderBBC(){
+  const a=currentBBCArticle();
+  let h='<div class="card"><div class="row" style="justify-content:space-between"><h3 style="margin:0">BBC 每日精读</h3>';
+  h+='<button class="btn sm" onclick="doFetchBBC()">↻ 刷新头条</button></div>';
+  h+='<div class="note" id="bbcinfo">'+esc(a.date)+' · 点击英文单词即可查词并加入单词本</div></div>';
+
+  h+='<div class="card">';
+  h+='<h3 style="margin-bottom:4px">'+esc(a.title)+'</h3>';
+  h+='<h4 style="margin:0 0 14px;font-weight:500;color:var(--muted)">'+esc(a.zhTitle)+'</h4>';
+  h+='<div class="row" style="gap:10px;margin:12px 0;flex-wrap:wrap">';
+  h+='<button class="btn primary" onclick="speakArticle()">🔊 全文朗读</button>';
+  h+='<button class="btn pink" onclick="followArticle()">🗣️ 逐句跟读</button>';
+  h+='<button class="btn ghost sm" onclick="pasteArticle()">📋 粘贴文章</button>';
+  h+='</div>';
+  h+='<div id="articleBody">';
+  a.paragraphs.forEach((p,i)=>{
+    h+='<div class="article-para">';
+    h+='<p class="article-en">'+wrapArticleWords(p.en)+'</p>';
+    h+='<p class="article-zh">'+esc(p.zh)+'</p>';
+    h+='</div>';
+  });
+  h+='</div></div>';
+
+  // headlines list (populated after refresh)
+  h+='<div id="bbcHeadlines"></div>';
+  $('content').insertAdjacentHTML('beforeend',h);
+
+  const ab=$('articleBody');
+  if(ab)ab.onclick=e=>{const w=e.target.dataset&&e.target.dataset.word;if(w)lookupArticleWord(w);};
+}
+
+function wrapArticleWords(s){
+  return s.replace(/([A-Za-z][A-Za-z'-]*)/g,'<span class="word" data-word="$1">$1</span>');
+}
+
+function lookupArticleWord(w){
+  const r=$('modalOverlay');
+  r.innerHTML='<div class="modal-box"><h3>'+esc(w)+'</h3><div id="wdRes" class="note"><span class="spin"></span>查询中…</div><div class="modal-actions"><button class="btn ghost" onclick="closeModal()">关闭</button></div></div>';
+  r.classList.add('show');
+  fetch('https://api.dictionaryapi.dev/api/v2/entries/en/'+encodeURIComponent(w))
+    .then(x=>x.json()).then(d=>{
+      const box=$('wdRes');if(!box)return;
+      if(!Array.isArray(d)){box.innerHTML='未找到该词 😢';return;}
+      let html='<div style="font-size:14px">';
+      d.slice(0,2).forEach(e=>{
+        const ph=(e.phonetics||[]).find(p=>p.text);if(ph)html+='<div class="meta">'+esc(ph.text)+'</div>';
+        (e.meanings||[]).forEach(m=>{
+          html+='<div style="margin:8px 0"><span class="chip">'+esc(m.partOfSpeech)+'</span>';
+          m.definitions.slice(0,2).forEach(df=>{
+            html+='<div class="meta">• '+esc(df.definition)+(df.example?'<br>　<i>'+esc(df.example)+'</i>':'')+'</div>';
+          });
+          html+='</div>';
+        });
+      });
+      html+='</div>';
+      html+='<div style="margin-top:12px"><input id="wdMean" placeholder="中文释义（可选）" style="width:100%"></div>';
+      box.innerHTML=html;
+      const actions=r.querySelector('.modal-actions');
+      actions.innerHTML='<button class="btn ghost" onclick="closeModal()">关闭</button><button class="btn primary" onclick="addToVocabFromArticle(\''+esc(w).replace(/'/g,"\\'")+'\')">+ 加入单词本</button>';
+      // auto translate
+      fetch('https://api.mymemory.translated.net/get?q='+encodeURIComponent(w)+'&langpair=en|zh-CN')
+        .then(x=>x.json()).then(dt=>{
+          const inp=$('wdMean');if(inp&&dt.responseStatus===200&&dt.responseData&&dt.responseData.translatedText)inp.value=dt.responseData.translatedText;
+        }).catch(()=>{});
+    }).catch(()=>{$('wdRes').innerHTML='查询失败，请检查网络 🌐';});
+}
+
+function addToVocabFromArticle(w){
+  const mean=$('wdMean')?$('wdMean').value.trim():'';
+  const v=getVocab();
+  if(!v.find(x=>x.word.toLowerCase()===w.toLowerCase())){
+    v.push({id:uid(),word:w,mean:mean,example:''});
+    LS.set('vocab',v);toast('已加入单词本');
+  } else {toast('单词本中已存在');}
+  closeModal();
+}
+
+function speakArticle(){
+  const a=currentBBCArticle();
+  const text=allArticleText(a);
+  speakText(text);
+}
+function speakText(t){
+  if(!('speechSynthesis'in window)){alert('浏览器不支持语音合成');return;}
+  window.speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(t);u.lang='en-US';u.rate=.9;
+  window.speechSynthesis.speak(u);
+}
+
+function followArticle(){
+  const a=currentBBCArticle();
+  const sentences=[];
+  a.paragraphs.forEach(p=>{
+    p.en.match(/[^.!?]+[.!?]+/g)?.forEach(s=>{
+      const clean=s.trim();if(clean)sentences.push({en:clean,zh:''});
+    });
+  });
+  if(!sentences.length){alert('没有可跟读的句子');return;}
+  let idx=0;
+  const render=()=>{
+    const s=sentences[idx];
+    const para=a.paragraphs.find(p=>p.en.includes(s.en.slice(0,30)))||{zh:''};
+    let h='<div class="follow-mode">';
+    h+='<div class="meta">BBC 每日精读 · 逐句跟读 ('+(idx+1)+'/'+sentences.length+')</div>';
+    h+='<div class="big-sentence">'+esc(s.en)+'</div>';
+    h+='<div class="meta" style="max-width:520px;margin:10px auto;line-height:1.7">'+esc(para.zh)+'</div>';
+    h+='<div class="row" style="justify-content:center;margin-top:18px;gap:10px;flex-wrap:wrap">';
+    h+='<button class="btn primary" onclick="speakText(\''+esc(s.en).replace(/'/g,"\\'")+'\')">🔊 听原句</button>';
+    h+='<button class="btn pink" onclick="speakThenPrompt(\''+esc(s.en).replace(/'/g,"\\'")+'\')">🗣️ 听后跟读</button>';
+    h+='<button class="btn ghost" '+(idx>0?'onclick="prevSentence()"':'disabled')+')">← 上一句</button>';
+    h+='<button class="btn ghost" '+(idx<sentences.length-1?'onclick="nextSentence()"':'disabled')+')">下一句 →</button>';
+    h+='<button class="btn ghost" onclick="renderEnglish()">返回</button>';
+    h+='</div></div>';
+    $('content').innerHTML=h;
+  };
+  window._followSentences=sentences;window._followIdx=idx;window._followRender=render;
+  render();
+}
+function nextSentence(){if(window._followIdx<window._followSentences.length-1){window._followIdx++;window._followRender();}}
+function prevSentence(){if(window._followIdx>0){window._followIdx--;window._followRender();}}
+function speakThenPrompt(t){speakText(t);setTimeout(()=>{if(confirm('现在跟读！准备好了吗？')){/* user can speak; no browser API for scoring */}},1800);}
+
+function pasteArticle(){
+  showModal({
+    title:'粘贴 BBC 文章',
+    note:'将英文原文与中文翻译按段落粘贴，用空行分隔段落。系统会自动拆分段落。',
+    fields:[
+      {id:'en',type:'textarea',placeholder:'英文原文…',value:''},
+      {id:'zh',type:'textarea',placeholder:'中文翻译（可选）…',value:''},
+      {id:'title',type:'text',placeholder:'标题',value:''}
+    ],
+    onSave:function(f){
+      if(!f.en)return;
+      const enParas=f.en.split(/\n\s*\n/).map(s=>s.trim()).filter(Boolean);
+      const zhParas=(f.zh||'').split(/\n\s*\n/).map(s=>s.trim()).filter(Boolean);
+      const article={
+        title:f.title||'Custom Article',
+        zhTitle:'自定义文章',
+        date:todayStr(),
+        paragraphs:enParas.map((p,i)=>({en:p,zh:zhParas[i]||''}))
+      };
+      LS.set('bbc_article',article);renderEnglish();
+    }
+  });
+}
+
+let _bbcLastFetch=0;
+function doFetchBBC(){
+  const info=$('bbcinfo');if(info)info.innerHTML='<span class="spin"></span>抓取中…';
+  _bbcLastFetch=Date.now();
+  fetchBBCHeadlines().then(list=>{
+    const info2=$('bbcinfo');
+    if(info2)info2.textContent=list.length?'已获取最新头条 · '+new Date().toLocaleTimeString():'头条获取失败，默认精读仍可阅读';
+    renderBBCHeadlines(list);
+  });
+}
+
+async function fetchBBCHeadlines(){
+  const sources=[
+    ()=>fetch('https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent('https://feeds.bbci.co.uk/news/world/rss.xml')+'&_t='+Date.now())
+      .then(r=>r.json()).then(d=>(d.items||[]).slice(0,6)),
+    ()=>jsonpGet('https://feed.mix.sina.com.cn/api/roll/get?pageid=155&lid=2514&num=6&versionNumber=1.4.5&_t='+Date.now(),'sinaNewsCb').then(d=>{
+      if(d&&d.result&&Array.isArray(d.result.data))return d.result.data.slice(0,6).map(a=>({title:a.title||'',link:a.url||a.link||'',description:a.summary||a.intro||''}));
+      throw new Error('empty');
+    })
+  ];
+  for(const fn of sources){
+    try{const items=await fn();if(items&&items.length)return items;}catch(e){}
+  }
+  return [];
+}
+
+function renderBBCHeadlines(list){
+  const box=$('bbcHeadlines');if(!box)return;
+  if(!list.length){box.innerHTML='<div class="card"><div class="empty">暂无最新头条</div></div>';return;}
+  let h='<div class="card"><h3>最新 BBC 头条</h3>';
+  list.forEach(n=>{
+    h+='<div class="item"><div class="txt">';
+    if(n.link)h+='<a href="'+esc(n.link)+'" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;font-weight:600">'+esc(n.title)+'</a>';
+    else h+='<b>'+esc(n.title)+'</b>';
+    if(n.description||n.desc)h+='<div class="meta">'+esc((n.description||n.desc||'')).slice(0,120)+'</div>';
+    h+='</div></div>';
+  });
+  h+='</div>';
+  box.innerHTML=h;
+}
 // 词汇本
 function renderVocab(){
   const v=getVocab();
@@ -1762,8 +2019,8 @@ function renderVocab(){
     h+='<div class="item"><div class="txt"><b>'+esc(x.word)+'</b> <span class="meta">'+esc(x.mean)+'</span>';
     if(x.example)h+='<div class="meta"><i>'+esc(x.example)+'</i></div>';
     h+='</div>';
-    h+='<button class="btn xs" onclick="speakWord(\''+esc(x.word).replace(/'/g,'\\\'')+'\')">🔊</button>';
-    h+='<button class="btn xs" onclick="followAlong('+i+')">🗣️ 跟读</button>';
+    h+='<button class="btn xs" onclick="speakText(\''+esc(x.word).replace(/'/g,"\\'")+'\')">🔊</button>';
+    h+='<button class="btn xs" onclick="followVocab('+i+')">🗣️ 跟读</button>';
     h+='<button class="del" onclick="delVocab('+i+')">✕</button></div>';
   });
   h+='</div>';
@@ -1776,212 +2033,29 @@ function addVocab(){
   LS.set('vocab',v);renderVocab();
 }
 function delVocab(i){const v=getVocab();v.splice(i,1);LS.set('vocab',v);renderVocab();}
-
-// 闪卡
 function startFlashcard(){
   const v=getVocab();if(!v.length){alert('先加一些单词吧');return;}
   let i=Math.floor(Math.random()*v.length);const x=v[i];
   const ans=confirm('🎴 闪卡\n\n'+x.word+'\n\n确定→看释义并朗读\n取消→仅朗读');
   if(ans){
     alert(x.word+'\n\n'+x.mean+(x.example?'\n\n例：'+x.example:''));
-    speakWord(x.word);
+    speakText(x.word);
   } else {
-    speakWord(x.word);
+    speakText(x.word);
   }
 }
-
-// 听力
-function speakWord(t){
-  if(!('speechSynthesis'in window)){alert('浏览器不支持语音合成');return;}
-  window.speechSynthesis.cancel();
-  const u=new SpeechSynthesisUtterance(t);
-  u.lang='en-US';u.rate=.85;
-  window.speechSynthesis.speak(u);
-}
-
-// 跟读模式
-function followAlong(i){
+function followVocab(i){
   const v=getVocab();const x=v[i];if(!x)return;
   let h='<div class="follow-mode">';
   h+='<div class="big-word">'+esc(x.word)+'</div>';
   h+='<div class="meta">'+esc(x.mean)+'</div>';
   if(x.example)h+='<div class="big-sentence">'+esc(x.example)+'</div>';
   h+='<div class="row" style="justify-content:center;margin-top:16px;gap:10px">';
-  h+='<button class="btn primary" onclick="speakWord(\''+esc(x.word).replace(/'/g,'\\\'')+'\')">🔊 听原音</button>';
-  h+='<button class="btn pink" onclick="speakWord(\''+esc(x.word).replace(/'/g,'\\\'')+'\');setTimeout(()=>{alert(\'现在跟读！\')},1500)">🗣️ 听后跟读</button>';
+  h+='<button class="btn primary" onclick="speakText(\''+esc(x.word).replace(/'/g,"\\'")+'\')">🔊 听原音</button>';
+  h+='<button class="btn pink" onclick="speakText(\''+esc(x.word).replace(/'/g,"\\'")+'\');setTimeout(()=>{alert(\'现在跟读！\')},1500)">🗣️ 听后跟读</button>';
   h+='<button class="btn ghost" onclick="renderEnglish()">← 返回</button>';
   h+='</div></div>';
   $('content').innerHTML=h;
-}
-
-// BBC 新闻（自动抓取 + 听力 + 跟读）
-let _bbcLastFetch=0;
-function renderBBC(){
-  const list=getBBCList();
-  const ts=LS.get('bbc_ts',0);
-
-  let h='<div class="card"><div class="row" style="justify-content:space-between"><h3 style="margin:0">BBC 每日新闻</h3>';
-  h+='<button class="btn sm" onclick="doFetchBBC()">↻ 刷新</button></div>';
-  h+='<div class="note" id="bbcinfo">'
-    +(ts?'上次更新：'+new Date(ts).toLocaleString():'打开即自动抓取')
-    +'</div></div>';
-
-  h+='<div class="card"><div class="row">';
-  h+='<input id="bbct" placeholder="手动添加标题" style="flex:1">';
-  h+='<input id="bbcl" placeholder="链接" style="max-width:180px">';
-  h+='<button class="btn pink sm" onclick="addBBCManual()">＋</button></div></div>';
-
-  h+='<div class="card"><h3>新闻流</h3>';
-  if(!list.length)h+='<div class="empty">暂无新闻</div>';
-  list.slice(0,15).forEach((n,i)=>{
-    h+='<div class="item"><div class="txt">';
-    if(n.link)h+='<a href="'+esc(n.link)+'" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;font-weight:600">'+esc(n.title)+'</a>';
-    else h+='<b>'+esc(n.title)+'</b>';
-    if(n.desc)h+='<div class="meta">'+esc(n.desc).slice(0,120)+'</div>';
-    h+='<div class="meta">'+(n.date||'')+'</div></div>';
-    h+='<div style="display:flex;gap:4px;flex-wrap:wrap">';
-    h+='<button class="btn xs" onclick="speakBBCTitle('+i+')">🔊 听</button>';
-    h+='<button class="btn xs" onclick="followAlongBBC('+i+')">🗣️ 跟读</button>';
-    h+='<button class="btn xs pink" onclick="transBBC('+i+')">🌐 翻译</button>';
-    h+='<button class="btn xs" onclick="openBBC('+i+')">阅读</button>';
-    h+='<button class="del" onclick="delBBC('+i+')">✕</button></div>';
-    if(n._trans)h+='<div class="m-note" id="bbcTrans_'+i+'" style="margin-top:6px;background:var(--pink-soft);padding:8px;border-radius:10px">📝 '+esc(n._trans)+'</div>';
-    else h+='<div class="m-note" id="bbcTrans_'+i+'" style="margin-top:6px;display:none"></div>';
-  });
-  h+='</div>';
-  $('content').insertAdjacentHTML('beforeend',h);
-
-  // auto-fetch (debounced 5min)
-  if(Date.now()-_bbcLastFetch>300000) doFetchBBC();
-}
-function addBBCManual(){
-  const t=$('bbct').value.trim();if(!t)return;
-  const l=$('bbcl').value.trim();
-  const list=getBBCList();
-  list.unshift({title:t,link:l,desc:'',date:todayStr()});
-  LS.set('bbc',list);renderBBC();
-}
-function delBBC(i){const list=getBBCList();list.splice(i,1);LS.set('bbc',list);renderBBC();}
-function speakBBCTitle(i){
-  const list=getBBCList();const t=list[i];if(!t)return;
-  // extract English words for pronunciation
-  const text=t.title||'';
-  speakWord(text.replace(/[^\w\s]/g,' ').trim().split(' ').slice(0,5).join(' ')||'BBC News');
-}
-function openBBC(i){
-  const list=getBBCList();const t=list[i];if(!t)return;
-  if(t.link)window.open(t.link,'_blank');
-}
-function transBBC(i){
-  const list=getBBCList();const t=list[i];if(!t)return;
-  const el=$('bbcTrans_'+i);if(!el)return;
-  el.style.display='';el.innerHTML='<span class="spin"></span> 翻译中…';
-  // Use free MyMemory API for translation
-  const text=(t.title+' '+(t.desc||'')).slice(0,500);
-  fetch('https://api.mymemory.translated.net/get?q='+encodeURIComponent(text)+'&langpair=en|zh-CN')
-    .then(r=>r.json()).then(d=>{
-      if(d.responseStatus===200&&d.responseData.translatedText){
-        t._trans=d.responseData.translatedText;
-        LS.set('bbc',list);
-        el.innerHTML='📝 '+esc(t._trans);
-      } else {
-        el.innerHTML='⚠️ 翻译失败，可稍后重试';
-      }
-    }).catch(()=>{el.innerHTML='⚠️ 翻译服务暂不可用';});
-}
-function followAlongBBC(i){
-  const list=getBBCList();const t=list[i];if(!t)return;
-  const text=t.title||'BBC News';
-  // Show follow-along mode for BBC article
-  let h='<div class="follow-mode">';
-  h+='<div class="meta" style="margin-bottom:8px">BBC 新闻 · 跟读练习</div>';
-  h+='<div class="big-sentence">'+esc(text)+'</div>';
-  if(t.desc)h+='<div class="meta" style="max-width:480px;margin:10px auto">'+esc(t.desc.slice(0,300))+'</div>';
-  h+='<div class="row" style="justify-content:center;margin-top:16px;gap:10px">';
-  h+='<button class="btn primary" onclick="speakWord(\''+esc(text).replace(/'/g,'\\\'')+'\')">🔊 听原音</button>';
-  h+='<button class="btn pink" onclick="speakWord(\''+esc(text).replace(/'/g,'\\\'')+'\');setTimeout(()=>{alert(\'现在跟读！大声朗读 🎤\')},2000)">🗣️ 听后跟读</button>';
-  if(t._trans)h+='<button class="btn ghost" onclick="alert(\''+esc(t._trans).replace(/'/g,'\\\'')+'\')">🌐 查看翻译</button>';
-  h+='<button class="btn ghost" onclick="renderEnglish()">← 返回</button>';
-  h+='</div></div>';
-  $('content').innerHTML=h;
-}
-
-function doFetchBBC(){
-  const info=$('bbcinfo');if(info)info.innerHTML='<span class="spin"></span>抓取中…';
-  _bbcLastFetch=Date.now();
-  fetchBBCNews().then(ok=>{
-    if(ok) LS.set('bbc_new',true);
-    const info2=$('bbcinfo');
-    if(info2) info2.textContent=ok?'已更新 · '+new Date().toLocaleTimeString():'获取失败，可稍后重试或手动添加';
-    if(ok) renderBBC();
-  });
-}
-
-async function fetchBBCNews(){
-  if(window._bbcFetching) return false;
-  window._bbcFetching=true;
-  const done=()=>{window._bbcFetching=false;};
-
-  // Try multiple proxy sources — order matters (most reliable first)
-  const sources=[
-    // Source 1: rss2json (usually works, has generous free tier)
-    ()=>fetch('https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent('https://feeds.bbci.co.uk/news/world/rss.xml')+'&_t='+Date.now())
-      .then(r=>r.json()).then(d=>{
-        if(!d.items||!d.items.length) throw new Error('empty');
-        return d.items.map(a=>({title:a.title||'',link:a.link||'',desc:a.description||'',date:todayStr()}));
-      }),
-    // Source 2: allorigins (good fallback)
-    ()=>fetch('https://api.allorigins.win/raw?url='+encodeURIComponent('https://feeds.bbci.co.uk/news/world/rss.xml')+'&_t='+Date.now())
-      .then(r=>r.text()).then(txt=>{const items=parseRSSXML(txt);if(!items.length)throw new Error('parse fail');return items;}),
-    // Source 3: corsproxy (last resort proxy)
-    ()=>fetch('https://corsproxy.io/?'+encodeURIComponent('https://feeds.bbci.co.uk/news/world/rss.xml'),{signal:AbortSignal.timeout(8000)})
-      .then(r=>r.text()).then(txt=>{const items=parseRSSXML(txt);if(!items.length)throw new Error('corsproxy empty');return items;}),
-  ];
-
-  for(const fn of sources){
-    try{
-      const items=await fn();
-      if(items&&items.length){
-        const existing=getBBCList();
-        const existTitles=new Set(existing.map(x=>x.title));
-        const fresh=items.filter(x=>x.title&&!existTitles.has(x.title)).slice(0,10);
-        if(fresh.length){
-          LS.set('bbc',[...fresh,...existing]);
-          LS.set('bbc_ts',Date.now());
-        }
-        done();return true;
-      }
-    } catch(e){/* try next */}
-  }
-
-  // All failed — inject demo data on first run
-  const existing=getBBCList();
-  if(!existing.length){
-    const demo=[
-      {title:'World News: Global markets react to economic data',desc:'Demo item — click 刷新 to retry auto-fetch, or add news manually.',date:todayStr(),link:''},
-      {title:'Climate: New report highlights urgent action needed',desc:'This is placeholder content. BBC RSS feed may be unreachable in your network.',date:todayStr(),link:''},
-      {title:'Technology: AI breakthroughs transform industries',desc:'Try using VPN or check your network connection if auto-fetch consistently fails.',date:todayStr(),link:''},
-    ];
-    LS.set('bbc',demo);LS.set('bbc_ts',Date.now());
-    done();return true;
-  }
-
-  done();
-  return false;
-}
-function parseRSSXML(txt){
-  const out=[];
-  const re=/<item>([\s\S]*?)<\/item>/g;
-  let m;
-  while((m=re.exec(txt))){
-    const it=m[1];
-    const g=tag=>{
-      const mm=it.match(new RegExp('<'+tag+'>([\\s\\S]*?)</'+tag+'>'));
-      return mm?mm[1].replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g,'$1').replace(/<[^>]+>/g,'').trim():'';
-    };
-    out.push({title:g('title'),link:g('link'),desc:g('description'),date:g('pubDate')});
-  }
-  return out;
 }
 
 // 单词查询
@@ -1991,7 +2065,7 @@ function renderQuery(){
   h+='<button class="btn primary" onclick="doQuery()">查询</button>';
   h+='<button class="btn sm" onclick="qSpeak()">🔊 朗读</button>';
   h+='<button class="btn sm" onclick="qFollow()">🗣️ 跟读</button></div>';
-  h+='<div id="q_res" class="note">输入单词查询音标、释义、例句，支持听力朗读和跟读练习。</div></div>';
+  h+='<div id="q_res" class="note">输入单词查询音标、释义、例句，支持听力朗读和跟读练习。查到的单词可直接加入单词本。</div></div>';
   $('content').insertAdjacentHTML('beforeend',h);
 }
 function doQuery(){
@@ -2003,9 +2077,7 @@ function doQuery(){
       let h='<div style="font-size:14px;padding:4px 0"><b style="font-size:18px">'+esc(d[0].word)+'</b> ';
       const ph=d[0].phonetics&&d[0].phonetics.find(p=>p.text);
       if(ph)h+='<span class="meta">'+esc(ph.text)+'</span>';
-      h+=' <button class="btn xs" onclick="speakWord(\''+esc(d[0].word).replace(/'/g,'\\\'')+'\')">🔊</button>';
-      // Chinese translation
-      h+='<button class="btn xs pink" onclick="transQuery(\''+esc(d[0].word).replace(/'/g,'\\\'')+'\')">🌐 中译</button>';
+      h+=' <button class="btn xs" onclick="speakText(\''+esc(d[0].word).replace(/'/g,"\\'")+'\')">🔊</button>';
       h+='</div>';
       d.slice(0,2).forEach(e=>{
         (e.meanings||[]).forEach(m=>{
@@ -2017,41 +2089,31 @@ function doQuery(){
           h+='</div>';
         });
       });
+      h+='<div style="margin-top:10px"><input id="q_mean" placeholder="中文释义（可选）" style="width:100%"></div>';
+      h+='<div style="margin-top:10px"><button class="btn primary" onclick="addToVocabFromQuery()">+ 加入单词本</button></div>';
       r.innerHTML=h;
-      // Auto-translate
-      transQuery(d[0].word);
+      fetch('https://api.mymemory.translated.net/get?q='+encodeURIComponent(w)+'&langpair=en|zh-CN')
+        .then(x=>x.json()).then(dt=>{const inp=$('q_mean');if(inp&&dt.responseStatus===200&&dt.responseData&&dt.responseData.translatedText)inp.value=dt.responseData.translatedText;})
+        .catch(()=>{});
     }).catch(()=>{r.innerHTML='查询失败，请检查网络连接 🌐';});
 }
-function transQuery(w){
-  const r=$('q_res');if(!r)return;
-  fetch('https://api.mymemory.translated.net/get?q='+encodeURIComponent(w)+'&langpair=en|zh-CN')
-    .then(x=>x.json()).then(d=>{
-      if(d.responseStatus===200&&d.responseData.translatedText){
-        // Append translation to result
-        const div=document.createElement('div');
-        div.className='m-note';
-        div.style.cssText='margin-top:8px;background:var(--pink-soft);padding:10px;border-radius:12px;font-size:14px';
-        div.innerHTML='<b>🌐 中文释义：</b>'+esc(d.responseData.translatedText);
-        // Avoid duplicates
-        if(!r.querySelector('.m-note[style*="pink-soft"]'))r.appendChild(div);
-      }
-    }).catch(()=>{});
+function addToVocabFromQuery(){
+  const w=$('q_word').value.trim();const mean=$('q_mean')?$('q_mean').value.trim():'';
+  const v=getVocab();if(!v.find(x=>x.word.toLowerCase()===w.toLowerCase())){v.push({id:uid(),word:w,mean:mean,example:''});LS.set('vocab',v);toast('已加入单词本');}else{toast('单词本中已存在');}
 }
-function qSpeak(){const w=$('q_word').value.trim();if(w)speakWord(w);}
+function qSpeak(){const w=$('q_word').value.trim();if(w)speakText(w);}
 function qFollow(){
   const w=$('q_word').value.trim();if(!w)return;
   const r=$('q_res');
   let h='<div class="follow-mode">';
   h+='<div class="big-word">'+esc(w)+'</div>';
   h+='<div class="row" style="justify-content:center;margin-top:16px;gap:10px">';
-  h+='<button class="btn primary" onclick="speakWord(\''+esc(w).replace(/'/g,'\\\'')+'\')">🔊 听发音</button>';
-  h+='<button class="btn pink" onclick="speakWord(\''+esc(w).replace(/'/g,'\\\'')+'\');setTimeout(()=>{alert(\'跟读时间！大声读出来 🎤\')},1500)">🗣️ 听后跟读</button>';
+  h+='<button class="btn primary" onclick="speakText(\''+esc(w).replace(/'/g,"\\'")+'\')">🔊 听发音</button>';
+  h+='<button class="btn pink" onclick="speakText(\''+esc(w).replace(/'/g,"\\'")+'\');setTimeout(()=>{alert(\'跟读时间！大声读出来 🎤\')},1500)">🗣️ 听后跟读</button>';
   h+='<button class="btn ghost" onclick="renderEnglish()">← 返回</button>';
   h+='</div></div>';
   r.innerHTML=h;
 }
-
-
 /* ================================================================
    模块 7：专注（番茄钟）
    ================================================================ */
@@ -2584,27 +2646,39 @@ function svgBars(vals,opt){
 
 /* ---- 阅读：每日页数打卡 ---- */
 function getReadLog(){return LS.get('read_log',{});}
-function saveReadToday(m,n){const l=getReadLog();l[todayStr()]={morning:+m||0,noon:+n||0,date:todayStr()};LS.set('read_log',l);}
+function isReadChecked(date){
+  const r=getReadLog()[date];
+  if(!r)return false;
+  if(typeof r.checked==='boolean')return r.checked;
+  return ((r.morning||0)+(r.noon||0))>0; // 兼容旧数据
+}
+function toggleReadToday(){
+  const l=getReadLog();const today=todayStr();
+  l[today]={checked:!isReadChecked(today),date:today};
+  LS.set('read_log',l);renderRead();
+}
+function saveReadToday(m,n){const l=getReadLog();l[todayStr()]={checked:true,date:todayStr()};LS.set('read_log',l);}
 function readStats(){
   const l=getReadLog(),keys=Object.keys(l),ws=weekStart(),ym=todayStr().slice(0,7),yr=todayStr().slice(0,4);
-  const sum=f=>keys.filter(f).reduce((a,k)=>a+(l[k].morning||0)+(l[k].noon||0),0);
-  return {week:sum(k=>k>=ws),month:sum(k=>k.slice(0,7)===ym),year:sum(k=>k.slice(0,4)===yr)};
+  const cnt=f=>keys.filter(f).filter(k=>isReadChecked(k)).length;
+  return {week:cnt(k=>k>=ws),month:cnt(k=>k.slice(0,7)===ym),year:cnt(k=>k.slice(0,4)===yr)};
 }
 /* ---- 写作：每日字数打卡 ---- */
 function getWriteLog(){return LS.get('write_log',{});}
 function saveWriteToday(w){const l=getWriteLog();l[todayStr()]=+w||0;LS.set('write_log',l);}
 function writeStats(){
-  const l=getWriteLog(),keys=Object.keys(l),ws=weekStart(),ym=todayStr().slice(0,7),yr=todayStr().slice(0,4);
-  const sum=f=>keys.filter(f).reduce((a,k)=>a+(l[k]||0),0);
+  const all=getWrites();
+  const dates=[...new Set(all.map(w=>w.date))].sort();
+  const ws=weekStart(),ym=todayStr().slice(0,7),yr=todayStr().slice(0,4);
+  const sum=f=>dates.filter(f).reduce((a,k)=>a+writeWordCount(k),0);
   let s=0;const t=new Date();
-  for(let i=0;i<400;i++){const dt=new Date(t.getTime()-i*86400000);dt.setMinutes(dt.getMinutes()-dt.getTimezoneOffset());const ds=dt.toISOString().slice(0,10);if((l[ds]||0)>0)s++;else if(i===0)continue;else break;}
-  return {week:sum(k=>k>=ws),month:sum(k=>k.slice(0,7)===ym),year:sum(k=>k.slice(0,4)===yr),streak:s};
+  for(let i=0;i<400;i++){const dt=new Date(t.getTime()-i*86400000);dt.setMinutes(dt.getMinutes()-dt.getTimezoneOffset());const ds=dt.toISOString().slice(0,10);if(writeWordCount(ds)>0)s++;else if(i===0)continue;else break;}
+  return {today:writeWordCount(todayStr()),week:sum(k=>k>=ws),month:sum(k=>k.slice(0,7)===ym),year:sum(k=>k.slice(0,4)===yr),streak:s};
 }
 /* ---- 饮食：每日勾选 ---- */
 function getDietChk(){return LS.get('diet_chk',{});}
 function saveDietChk(o){const l=getDietChk();l[todayStr()]=o;LS.set('diet_chk',l);}
 function toggleDiet(f){const d=getDietChk()[todayStr()]||{bf:false,lunch:false,dinner:false,mv:false,water:0};d[f]=!d[f];saveDietChk(d);renderDiet();}
-function stepWater(n){const d=getDietChk()[todayStr()]||{bf:false,lunch:false,dinner:false,mv:false,water:0};d.water=Math.max(0,(d.water||0)+n);saveDietChk(d);renderDiet();}
 function dietComplianceWeek(){
   const l=getDietChk(),ws=weekStart();let days=0,comp=0;
   Object.keys(l).filter(k=>k>=ws).forEach(k=>{days++;const d=l[k];if(d.bf&&d.lunch&&d.dinner)comp++;});
@@ -2621,7 +2695,7 @@ function bodyWeekStats(){
   const dc=getDietChk();let dietOk=0,dietDays=0;
   Object.keys(dc).filter(k=>k>=ws).forEach(k=>{dietDays++;if(dc[k].bf&&dc[k].lunch&&dc[k].dinner)dietOk++;});
   const sl=(typeof getSleepLogs==='function')?getSleepLogs().filter(x=>x.date>=ws):[];
-  let avgSl=0;if(sl.length){avgSl=Math.round(sl.reduce((a,x)=>{const [bh,bm]=(x.bed||'0:0').split(':').map(Number);const [wh,wm]=(x.wake||'0:0').split(':').map(Number);let m=(wh*60+wm)-(bh*60+bm);if(m<0)m+=1440;return a+m;},0)/sl.length/60*10)/10;}
+  let avgSl=0;if(sl.length){avgSl=Math.round(sl.reduce((a,x)=>{if(x.dur!=null)return a+x.dur*60;const [bh,bm]=(x.bed||'0:0').split(':').map(Number);const [wh,wm]=(x.wake||'0:0').split(':').map(Number);let m=(wh*60+wm)-(bh*60+bm);if(m<0)m+=1440;return a+m;},0)/sl.length/60*10)/10;}
   return {exDays,dietOk,dietDays,avgSl};
 }
 
@@ -2661,6 +2735,7 @@ function toastMsg(msg){
   if(!t){t=document.createElement('div');t.id='remindToast';t.style.cssText='position:fixed;left:50%;top:18px;transform:translateX(-50%);z-index:70;background:rgba(40,52,64,.95);color:#fff;font-size:14px;padding:11px 16px;border-radius:14px;box-shadow:0 8px 22px rgba(0,0,0,.3);opacity:0;transition:opacity .3s;max-width:88%;text-align:center';document.body.appendChild(t);}
   t.textContent='🔔 '+msg;t.style.opacity='1';clearTimeout(t._tm);t._tm=setTimeout(()=>t.style.opacity='0',4500);
 }
+function toast(m){toastMsg(m);}
 function fireNotify(msg){
   if('Notification'in window&&Notification.permission==='granted'){try{new Notification('航一提醒',{body:msg});}catch(e){}}
   toastMsg(msg);
