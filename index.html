@@ -180,6 +180,11 @@ canvas{max-width:100%;height:auto !important;}
 .note{font-size:12px;color:var(--muted);background:var(--sky-soft);border-radius:10px;padding:7px 9px;margin-top:7px;line-height:1.55;}
 .ovgrid{display:grid;gap:10px;grid-template-columns:repeat(2,1fr);}
 @media(min-width:680px){.ovgrid{grid-template-columns:repeat(4,1fr);}}
+.ovgrid.sc{grid-template-columns:repeat(3,1fr);margin-top:4px;}
+.scbtn{display:flex;flex-direction:column;align-items:center;gap:3px;background:var(--card-solid);border:1.5px solid var(--line);border-radius:14px;padding:12px 6px;cursor:pointer;transition:.15s;}
+.scbtn:active{transform:scale(.96);}
+.scbtn .sic{font-size:20px;line-height:1;}
+.scbtn .stx{font-size:12px;color:var(--ink);font-weight:600;}
 
 /* loading spinner */
 .spin{display:inline-block;width:18px;height:18px;border:2.5px solid var(--line);border-top-color:var(--sky);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px;}
@@ -435,6 +440,7 @@ function getPlanDay(date){
 function savePlanDay(date,day){LS.set('plan_'+date,day);}
 
 function renderPlan(){
+  if(planView==='review'){renderPlanReview();return;}
   const tpl=getPlanTpl();
   const day=getPlanDay(todayStr());
   let total=0, done=0, tm=0, dm=0;
@@ -455,7 +461,8 @@ function renderPlan(){
   h+='<div class="row"><button class="btn primary sm" onclick="copyYesterday()">复制昨日</button>';
   h+='<button class="btn ghost sm" onclick="resetToday()">重置今日</button>';
   h+='<button class="btn pink sm" onclick="addTimeBlock()">＋ 时段</button>';
-  h+='<button class="btn ghost sm" onclick="editPlanSettings()">⚙ 管理</button></div></div>';
+  h+='<button class="btn ghost sm" onclick="editPlanSettings()">⚙ 管理</button>';
+  h+='<button class="btn sm" onclick="planView=\'review\';renderPlan()">📊 复盘</button></div></div>';
 
   // time blocks
   day.forEach((b,bi)=>{
@@ -605,7 +612,12 @@ function getProfile(){return LS.get('profile',{name:'',height:1.62,target:55,exW
 
 function renderBody(){
   const c=$('content');
-  let h='<div class="card"><h3>身体管理</h3><div class="subtabs">';
+  const bs=bodyWeekStats();
+  let dh='<div class="card"><h3>本周看板</h3><div class="row" style="flex-wrap:wrap">';
+  dh+='<span class="chip on">运动 '+bs.exDays+' 天</span>';
+  dh+='<span class="chip">饮食合规 '+bs.dietOk+'/'+(bs.dietDays||0)+' 天</span>';
+  dh+='<span class="chip">平均睡眠 '+bs.avgSl+'h</span></div></div>';
+  let h=dh+'<div class="card"><h3>身体管理</h3><div class="subtabs">';
   [['sleep','睡眠'],['diet','饮食'],['exercise','锻炼'],['weight','体重'],['profile','档案']].forEach(t=>{
     h+='<button class="'+(bodyTab===t[0]?'on':'')+'" data-btab="'+t[0]+'">'+t[1]+'</button>';
   });
@@ -894,7 +906,15 @@ function saveProfile(){
 function getDietLogs(){return LS.get('diet',[]);}
 function renderDiet(){
   const logs=getDietLogs();
-  let h='<div class="card"><h3>饮食记录</h3>';
+  const dc=getDietChk()[todayStr()]||{bf:false,lunch:false,dinner:false,mv:false,water:0};
+  let ck='<div class="card"><h3>今日饮食打卡</h3><div class="row" style="flex-wrap:wrap;gap:6px">';
+  ck+='<button class="ck '+(dc.bf?'on':'')+'" onclick="toggleDiet(\'bf\')">'+(dc.bf?'✓ ':'')+'早餐</button>';
+  ck+='<button class="ck '+(dc.lunch?'on':'')+'" onclick="toggleDiet(\'lunch\')">'+(dc.lunch?'✓ ':'')+'午餐</button>';
+  ck+='<button class="ck '+(dc.dinner?'on':'')+'" onclick="toggleDiet(\'dinner\')">'+(dc.dinner?'✓ ':'')+'晚餐</button>';
+  ck+='<button class="ck '+(dc.mv?'on':'')+'" onclick="toggleDiet(\'mv\')">'+(dc.mv?'✓ ':'')+'多维</button>';
+  ck+='<span class="row" style="gap:4px;align-items:center"><button class="mini" onclick="stepWater(-1)">－</button><span class="chip">饮水 '+dc.water+' 杯</span><button class="mini" onclick="stepWater(1)">＋</button></span>';
+  ck+='</div></div>';
+  let h=ck+'<div class="card"><h3>饮食记录</h3>';
   h+='<div class="note">原则：七分饱 · 粗碳 · 优质蛋白 · 深绿蔬菜 · 少精制碳水</div>';
   h+='<div class="row">';
   h+='<input id="d_date" type="date" value="'+todayStr()+'" style="max-width:140px">';
@@ -1307,7 +1327,15 @@ function getBooks(){return LS.get('books',[]);}
 function getCards(){return LS.get('cards',[]);}
 
 function renderRead(){
-  let h='<div class="card"><h3>阅读任务</h3><div class="subtabs">';
+  const rl=getReadLog()[todayStr()]||{morning:0,noon:0};
+  const rs=readStats();
+  let ck='<div class="card"><h3>今日阅读打卡（目标各10页）</h3><div class="row">';
+  ck+='<input id="rd_m" type="number" placeholder="晨间页数" value="'+(rl.morning||0)+'" style="max-width:120px">';
+  ck+='<input id="rd_n" type="number" placeholder="午间页数" value="'+(rl.noon||0)+'" style="max-width:120px">';
+  ck+='<button class="btn primary" onclick="saveReadToday(($(\'rd_m\').value||0),($(\'rd_n\').value||0));renderRead()">保存</button></div>';
+  ck+='<div class="row" style="flex-wrap:wrap;margin-top:6px"><span class="chip on">今日 '+((rl.morning||0)+(rl.noon||0))+' 页</span>';
+  ck+='<span class="chip">本周 '+rs.week+' 页</span><span class="chip">本月 '+rs.month+' 页</span><span class="chip">年度 '+rs.year+' 页</span></div></div>';
+  let h=ck+'<div class="card"><h3>阅读任务</h3><div class="subtabs">';
   [['books','书单'],['cards','卡片笔记'],['notes','读书笔记']].forEach(t=>{
     h+='<button class="'+(readTab===t[0]?'on':'')+'" data-rtab="'+t[0]+'">'+t[1]+'</button>';
   });
@@ -1505,7 +1533,14 @@ function getWrites(){return LS.get('writes',[]);}
 function getDoneList(){return LS.get('done_list',[]);}
 
 function renderWrite(){
-  let h='<div class="card"><h3>写作习惯</h3><div class="subtabs">';
+  const wl=getWriteLog()[todayStr()]||0;
+  const ws=writeStats();
+  let ck='<div class="card"><h3>今日写作打卡（目标500字）</h3><div class="row">';
+  ck+='<input id="wr_w" type="number" placeholder="今日字数" value="'+wl+'" style="max-width:120px">';
+  ck+='<button class="btn primary" onclick="saveWriteToday(($(\'wr_w\').value||0));renderWrite()">保存</button></div>';
+  ck+='<div class="row" style="flex-wrap:wrap;margin-top:6px"><span class="chip on">今日 '+wl+' 字</span>';
+  ck+='<span class="chip">本周 '+ws.week+' 字</span><span class="chip">本月 '+ws.month+' 字</span><span class="chip">年度 '+ws.year+' 字</span><span class="chip">连续 '+ws.streak+' 天</span></div></div>';
+  let h=ck+'<div class="card"><h3>写作习惯</h3><div class="subtabs">';
   [
     ['diary','日记'],['inspire','灵感'],['review','影评'],
     ['invest','投资'],['emotion','情绪'],['achievement','成就'],['topics','选题推荐']
@@ -2026,7 +2061,9 @@ function renderFocus(){
   const mins=log.reduce((a,x)=>a+(x.dur||0),0);
   if(!timerState.left){timerState.left=s.work*60;timerState.total=s.work*60;}
 
-  let h='<div class="card center"><h3 style="justify-content:center">专注记录 · 番茄钟</h3>';
+  const fp=getFocusPlan()[todayStr()]||'';
+  let ph='<div class="card"><h3>今日高价值任务</h3><div class="row"><textarea id="fp_text" placeholder="写下今天最复杂/最需专注的1-3件事（最难的先做）" style="min-height:64px">'+esc(fp)+'</textarea></div><div class="row"><button class="btn primary sm" onclick="saveFocusPlan()">保存</button>'+(fp?'<span class="chip on">已记录</span>':'')+'</div></div>';
+  let h=ph+'<div class="card center"><h3 style="justify-content:center">专注记录 · 番茄钟</h3>';
   h+='<div class="timer" id="tmDisplay">'+fmtTime(timerState.left)+'</div>';
   h+='<div class="chip '+(timerState.mode==='work'?'on':'')+'">'+(timerState.mode==='work'?'专注中':'休息中')+'</div>';
   h+='<div class="row" style="justify-content:center;margin-top:12px;gap:8px">';
@@ -2163,6 +2200,15 @@ function renderReport(span){
   h+='<div class="kpi"><div class="v">'+getCards().length+'</div><div class="l">卡片笔记</div></div>';
   h+='</div>';
 
+  const rdays=span==='week'?7:30;const rarr=[];
+  for(let i=rdays-1;i>=0;i--){const dt=new Date();dt.setMinutes(dt.getMinutes()-dt.getTimezoneOffset());const ds=new Date(dt.getTime()-i*86400000).toISOString().slice(0,10);const p=dayCompletePct(ds);rarr.push(p==null?0:p);}
+  const rtop=topUnfinished(rdays);const rsk=streakDays();
+  h+='<div class="card"><h3>打卡完成率趋势</h3>'+svgLine(rarr,{color:'#e986ab'})+'</div>';
+  h+='<div class="grid cols2"><div class="kpi"><div class="v">'+rsk+'</div><div class="l">连续全勤天数</div></div>';
+  h+='<div class="card" style="grid-column:1/-1"><h3>最常未完成 Top3</h3>'+(rtop.length?'':'<div class="empty">暂无 🎉</div>');
+  rtop.forEach((t,i)=>h+='<div class="item"><div class="txt"><b>'+(i+1)+'. </b>'+esc(t.t)+'</div><div class="meta">'+t.n+' 次</div></div>');
+  h+='</div></div>';
+
   // summary sentence
   h+='<div class="card"><h3>小结</h3><div class="meta">';
   h+='这段时间打卡完成率 '+planPct+'%，平均睡眠 '+avgSl+'h，锻炼 '+exCnt+' 次。';
@@ -2206,6 +2252,12 @@ function renderSettings(){
   h+='<div class="row" style="margin-top:8px"><button class="btn primary" onclick="exportOfflineFile()">📦 导出离线副本（含数据·永不停止）</button></div>';
   h+='<div class="note">换手机 / 重装浏览器，用「导出离线副本」生成一个自带全部数据的 HTML 存到「文件」App，从那打开即可带走全部数据，<b>不需任何服务器、永不停止</b>。</div>';
   h+='<div class="note">需要多设备实时云同步？在「关于航一」下方用 GitHub Pages 托管本文件即可（一次性设置，永久免费），我可一步步教你。</div></div>';
+
+  const r=getReminders();
+  h+='<div class="card"><h3>时段提醒</h3>';
+  h+='<div class="row"><button class="chip '+(r.enabled?'on':'')+'" onclick="toggleReminders()">'+(r.enabled?'已开启':'已关闭')+'</button>';
+  h+='<button class="btn sm" onclick="requestReminderPerm()">🔔 开启系统通知</button></div>';
+  h+='<div class="note">将在 9:00 / 12:00 / 15:30 / 20:30 弹出提醒，17:00 汇总今日未完成项。需保持本页面打开才会提醒。</div></div>';
 
   h+='<div class="card"><h3>关于航一</h3>';
   h+='<div class="meta">航一 · 你的全天候 All-in-One 生活工作台</div>';
@@ -2342,6 +2394,7 @@ function exportOfflineFile(){
    ================================================================ */
 function renderOverview(){
   const prof=getProfile();
+  const sk=streakDays();
   const day=getPlanDay(todayStr());
   let total=0,done=0;
   day.forEach(b=>(b.items||[]).forEach(it=>{total++;if(it.done)done++;}));
@@ -2369,6 +2422,22 @@ function renderOverview(){
   let h=banner;
   h+='<div class="banner"><span>☀️ 你好，'+(prof.name||'航一')+'。今天也要好好照顾自己 ✨</span></div>';
 
+  const ringC=2*Math.PI*52, ringOff=(ringC*(1-pct/100)).toFixed(1);
+  let ring='<svg viewBox="0 0 120 120" width="118" height="118"><circle cx="60" cy="60" r="52" fill="none" stroke="rgba(120,130,150,.18)" stroke-width="11"/>'
+    +'<circle cx="60" cy="60" r="52" fill="none" stroke="#e986ab" stroke-width="11" stroke-linecap="round" stroke-dasharray="'+ringC.toFixed(1)+'" stroke-dashoffset="'+ringOff+'" transform="rotate(-90 60 60)"/>'
+    +'<text x="60" y="57" text-anchor="middle" font-size="26" fill="#2a3440" font-weight="700">'+pct+'%</text>'
+    +'<text x="60" y="80" text-anchor="middle" font-size="12" fill="#8a93a6">今日打卡</text></svg>';
+  let sc='<div class="ovgrid sc">';
+  [['plan','✓ 每日打卡'],['body','❤ 身体管理'],['read','📚 阅读任务'],['write','✎ 写作习惯'],['focus','⏱ 专注记录'],['report','📊 回顾报告']].forEach(m=>{
+    sc+='<button class="scbtn" onclick="go(\''+m[0]+'\')"><span class="sic">'+m[1].split(' ')[0]+'</span><span class="stx">'+m[1].split(' ').slice(1).join(' ')+'</span></button>';
+  });
+  sc+='</div>';
+  h+='<div class="card" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">'+
+     '<div style="flex:0 0 auto">'+ring+'</div>'+
+     '<div style="flex:1;min-width:160px"><div class="l" style="font-size:15px;font-weight:600">今日打卡 '+done+'/'+total+' 完成</div>'+
+     (sk>0?'<div class="chip on" style="margin-top:6px">🔥 连续全勤 '+sk+' 天</div>':'<div class="chip" style="margin-top:6px">开始你的全勤打卡吧</div>')+
+     '</div></div>';
+  h+=sc;
   h+='<div class="ovgrid">';
   h+='<div class="kpi"><div class="v">'+pct+'<small>%</small></div><div class="l">今日打卡 '+done+'/'+total+'</div></div>';
   h+='<div class="kpi"><div class="v">'+(sl?((sl.bed||'—')+'→'+(sl.wake||'—')):'—')+'</div><div class="l">睡眠</div></div>';
@@ -2423,6 +2492,8 @@ function init(){
   else go('overview');
   autoFetchOnStart();
   startKeepAlive();
+  checkReminders();
+  setInterval(checkReminders,30000);
 }
 /* 前台保活：App 打开时每 2.5 分钟静默请求自身（HEAD，几乎零流量），
    防止沙箱因空闲被判定休眠。仅在在线时运行。 */
@@ -2436,6 +2507,178 @@ function startKeepAlive(){
     }catch(e){}
   },150000);
 }
+/* ================================================================
+   新增：图表 / 统计 / 每日打卡 / 提醒 引擎（v4）
+   所有数据沿用 hy_ 前缀键，旧备份可正常导入
+   ================================================================ */
+let planView='today';        // today | review
+let planReviewSpan='week';   // week | month
+
+function weekStart(){const d=new Date();const day=(d.getDay()+6)%7;d.setDate(d.getDate()-day);d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,10);}
+function dayCompletePct(date){
+  const d=LS.get('plan_'+date,null);if(!d||!d.length)return null;
+  let t=0,dn=0;d.forEach(b=>(b.items||[]).forEach(it=>{t++;if(it.done)dn++;}));
+  return t?Math.round(dn/t*100):0;
+}
+function periodOf(time){
+  const m=(time||'').match(/(\d{1,2}):/);const h=m?parseInt(m[1]):0;
+  if(h<8)return '晨间';if(h<12)return '上午';if(h<14)return '午间';if(h<18)return '下午';return '晚间';
+}
+function planPeriodStats(date){
+  const d=LS.get('plan_'+date,null);const out={};
+  ['晨间','上午','午间','下午','晚间'].forEach(p=>out[p]={t:0,d:0});
+  if(!d)return out;
+  d.forEach(b=>{const p=periodOf(b.time);(b.items||[]).forEach(it=>{if(out[p]){out[p].t++;if(it.done)out[p].d++;}});});
+  return out;
+}
+function streakDays(){
+  let s=0;const today=new Date();
+  for(let i=0;i<400;i++){
+    const dt=new Date(today.getTime()-i*86400000);dt.setMinutes(dt.getMinutes()-dt.getTimezoneOffset());
+    const ds=dt.toISOString().slice(0,10);
+    const pct=dayCompletePct(ds);
+    if(pct===null){if(i===0)continue;else break;}
+    if(pct>=100)s++;else break;
+  }
+  return s;
+}
+function topUnfinished(days){
+  const cnt={};
+  for(let i=0;i<days;i++){
+    const dt=new Date();dt.setMinutes(dt.getMinutes()-dt.getTimezoneOffset());
+    const ds=new Date(dt.getTime()-i*86400000).toISOString().slice(0,10);
+    const d=LS.get('plan_'+ds,null);if(!d)continue;
+    d.forEach(b=>(b.items||[]).forEach(it=>{if(!it.done)cnt[it.t]=(cnt[it.t]||0)+1;}));
+  }
+  return Object.keys(cnt).map(k=>({t:k,n:cnt[k]})).sort((a,b)=>b.n-a.n).slice(0,3);
+}
+function svgLine(vals,opt){
+  opt=opt||{};const w=opt.w||300,h=opt.h||92,max=opt.max||100,color=opt.color||'#e986ab';
+  const n=vals.length;if(!n)return '<div class="empty">暂无数据</div>';
+  const pad=6,bw=w-pad*2,bh=h-pad*2,step=n>1?bw/(n-1):0;
+  const pts=vals.map((v,i)=>{const x=pad+step*i;const y=pad+bh-(Math.min(v,max)/max)*bh;return x.toFixed(1)+','+y.toFixed(1);});
+  let grid='';for(let g=0;g<=2;g++){const y=pad+bh*g/2;grid+='<line x1="'+pad+'" y1="'+y+'" x2="'+(w-pad)+'" y2="'+y+'" stroke="rgba(120,130,150,.16)" stroke-width="1"/>';}
+  const path='<polyline points="'+pts.join(' ')+'" fill="none" stroke="'+color+'" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>';
+  const dots=pts.map(p=>'<circle cx="'+p.split(',')[0]+'" cy="'+p.split(',')[1]+'" r="2.6" fill="'+color+'"/>').join('');
+  return '<svg viewBox="0 0 '+w+' '+h+'" width="100%" height="'+h+'" preserveAspectRatio="none" style="display:block">'+grid+path+dots+'</svg>';
+}
+function svgBars(vals,opt){
+  opt=opt||{};const w=opt.w||300,h=opt.h||104,color=opt.color||'#7fb2e6';
+  const n=vals.length;if(!n)return '<div class="empty">暂无数据</div>';
+  const pad=8,gap=5,bw=(w-pad*2-gap*(n-1))/n,bh=h-pad*2-10;
+  const max=Math.max(1,...vals.map(v=>v.v||0));
+  let s='<svg viewBox="0 0 '+w+' '+h+'" width="100%" height="'+h+'" preserveAspectRatio="none" style="display:block">';
+  vals.forEach((d,i)=>{
+    const v=d.v||0,bh2=bh*(v/max),x=pad+i*(bw+gap),y=pad+bh-bh2;
+    s+='<rect x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+bh2.toFixed(1)+'" rx="3" fill="'+color+'"/>';
+    if(d.l)s+='<text x="'+(x+bw/2).toFixed(1)+'" y="'+(h-2)+'" font-size="9" fill="#8a93a6" text-anchor="middle">'+esc(d.l)+'</text>';
+    if(d.v!=null)s+='<text x="'+(x+bw/2).toFixed(1)+'" y="'+(y-3).toFixed(1)+'" font-size="9" fill="#6b7488" text-anchor="middle">'+d.v+'</text>';
+  });
+  s+='</svg>';return s;
+}
+
+/* ---- 阅读：每日页数打卡 ---- */
+function getReadLog(){return LS.get('read_log',{});}
+function saveReadToday(m,n){const l=getReadLog();l[todayStr()]={morning:+m||0,noon:+n||0,date:todayStr()};LS.set('read_log',l);}
+function readStats(){
+  const l=getReadLog(),keys=Object.keys(l),ws=weekStart(),ym=todayStr().slice(0,7),yr=todayStr().slice(0,4);
+  const sum=f=>keys.filter(f).reduce((a,k)=>a+(l[k].morning||0)+(l[k].noon||0),0);
+  return {week:sum(k=>k>=ws),month:sum(k=>k.slice(0,7)===ym),year:sum(k=>k.slice(0,4)===yr)};
+}
+/* ---- 写作：每日字数打卡 ---- */
+function getWriteLog(){return LS.get('write_log',{});}
+function saveWriteToday(w){const l=getWriteLog();l[todayStr()]=+w||0;LS.set('write_log',l);}
+function writeStats(){
+  const l=getWriteLog(),keys=Object.keys(l),ws=weekStart(),ym=todayStr().slice(0,7),yr=todayStr().slice(0,4);
+  const sum=f=>keys.filter(f).reduce((a,k)=>a+(l[k]||0),0);
+  let s=0;const t=new Date();
+  for(let i=0;i<400;i++){const dt=new Date(t.getTime()-i*86400000);dt.setMinutes(dt.getMinutes()-dt.getTimezoneOffset());const ds=dt.toISOString().slice(0,10);if((l[ds]||0)>0)s++;else if(i===0)continue;else break;}
+  return {week:sum(k=>k>=ws),month:sum(k=>k.slice(0,7)===ym),year:sum(k=>k.slice(0,4)===yr),streak:s};
+}
+/* ---- 饮食：每日勾选 ---- */
+function getDietChk(){return LS.get('diet_chk',{});}
+function saveDietChk(o){const l=getDietChk();l[todayStr()]=o;LS.set('diet_chk',l);}
+function toggleDiet(f){const d=getDietChk()[todayStr()]||{bf:false,lunch:false,dinner:false,mv:false,water:0};d[f]=!d[f];saveDietChk(d);renderDiet();}
+function stepWater(n){const d=getDietChk()[todayStr()]||{bf:false,lunch:false,dinner:false,mv:false,water:0};d.water=Math.max(0,(d.water||0)+n);saveDietChk(d);renderDiet();}
+function dietComplianceWeek(){
+  const l=getDietChk(),ws=weekStart();let days=0,comp=0;
+  Object.keys(l).filter(k=>k>=ws).forEach(k=>{days++;const d=l[k];if(d.bf&&d.lunch&&d.dinner)comp++;});
+  return {days,comp};
+}
+/* ---- 专注：今日高价值任务 ---- */
+function getFocusPlan(){return LS.get('focus_plan',{});}
+function saveFocusPlan(){const v=$('fp_text')?$('fp_text').value.trim():'';const l=getFocusPlan();l[todayStr()]=v;LS.set('focus_plan',l);renderFocus();}
+/* ---- 身体：本周看板 ---- */
+function bodyWeekStats(){
+  const ws=weekStart();
+  const ex=getExLogs?getExLogs().filter(x=>x.date>=ws):[];
+  const exDays=new Set(ex.map(x=>x.date)).size;
+  const dc=getDietChk();let dietOk=0,dietDays=0;
+  Object.keys(dc).filter(k=>k>=ws).forEach(k=>{dietDays++;if(dc[k].bf&&dc[k].lunch&&dc[k].dinner)dietOk++;});
+  const sl=(typeof getSleepLogs==='function')?getSleepLogs().filter(x=>x.date>=ws):[];
+  let avgSl=0;if(sl.length){avgSl=Math.round(sl.reduce((a,x)=>{const [bh,bm]=(x.bed||'0:0').split(':').map(Number);const [wh,wm]=(x.wake||'0:0').split(':').map(Number);let m=(wh*60+wm)-(bh*60+bm);if(m<0)m+=1440;return a+m;},0)/sl.length/60*10)/10;}
+  return {exDays,dietOk,dietDays,avgSl};
+}
+
+/* ---- 打卡复盘 ---- */
+function renderPlanReview(){
+  const days=planReviewSpan==='week'?7:30;
+  const arr=[];
+  for(let i=days-1;i>=0;i--){const dt=new Date();dt.setMinutes(dt.getMinutes()-dt.getTimezoneOffset());const ds=new Date(dt.getTime()-i*86400000).toISOString().slice(0,10);arr.push({date:ds.slice(5),pct:dayCompletePct(ds)});}
+  const lineVals=arr.map(a=>a.pct==null?0:a.pct);
+  const ps=planPeriodStats(todayStr());
+  const bars=['晨间','上午','午间','下午','晚间'].map(p=>({l:p,v:ps[p]?Math.round(ps[p].d/(ps[p].t||1)*100):0}));
+  const top=topUnfinished(days);
+  const sk=streakDays();
+  let best={avg:-1,wk:''};
+  for(let w=0;w<8;w++){let sum=0,c=0;for(let i=w*7;i<w*7+7;i++){const dt=new Date();dt.setMinutes(dt.getMinutes()-dt.getTimezoneOffset());const ds=new Date(dt.getTime()-i*86400000).toISOString().slice(0,10);const p=dayCompletePct(ds);if(p!=null){sum+=p;c++;}}if(c){const avg=Math.round(sum/c);if(avg>best.avg)best={avg,wk:'第'+(w+1)+'周前'};}}
+  let h='<div class="card"><div class="row" style="justify-content:space-between"><h3 style="margin:0">打卡复盘</h3>';
+  h+='<div class="seg"><button class="'+(planReviewSpan==='week'?'on':'')+'" onclick="planReviewSpan=\'week\';renderPlanReview()">近7天</button>';
+  h+='<button class="'+(planReviewSpan==='month'?'on':'')+'" onclick="planReviewSpan=\'month\';renderPlanReview()">近30天</button></div></div>';
+  h+='<button class="btn sm ghost" onclick="planView=\'today\';renderPlan()">← 返回今日打卡</button>';
+  h+='<div class="card"><h3>每日完成率</h3>'+svgLine(lineVals,{color:'#e986ab'})+'<div class="meta">100%=全勤，灰色区=当天无记录</div></div>';
+  h+='<div class="card"><h3>今日各时段完成率</h3>'+svgBars(bars,{color:'#7fb2e6'})+'</div>';
+  h+='<div class="grid cols2">';
+  h+='<div class="kpi"><div class="v">'+sk+'</div><div class="l">连续全勤天数</div></div>';
+  h+='<div class="kpi"><div class="v">'+(best.avg>=0?best.avg+'%':'—')+'</div><div class="l">最佳周 '+(best.wk||'—')+'</div></div></div>';
+  h+='<div class="card" style="grid-column:1/-1"><h3>最常未完成 Top3</h3>';
+  if(!top.length)h+='<div class="empty">暂无 — 太棒了 🎉</div>';
+  else top.forEach((t,i)=>h+='<div class="item"><div class="txt"><b>'+(i+1)+'. </b>'+esc(t.t)+'</div><div class="meta">'+t.n+' 次</div></div>');
+  h+='</div></div>';
+  $('content').innerHTML=h;
+}
+
+/* ---- 时段提醒引擎 ---- */
+function getReminders(){return LS.get('reminders',{enabled:true,times:[{t:'09:00',label:'早餐(9:00前)'},{t:'12:00',label:'午餐(12:00前)'},{t:'15:30',label:'西罗莫司'},{t:'20:30',label:'拉窗帘调灯光'},{t:'17:00',label:'未完成待办汇总'}]});}
+let _firedToday={};
+function toastMsg(msg){
+  let t=document.getElementById('remindToast');
+  if(!t){t=document.createElement('div');t.id='remindToast';t.style.cssText='position:fixed;left:50%;top:18px;transform:translateX(-50%);z-index:70;background:rgba(40,52,64,.95);color:#fff;font-size:14px;padding:11px 16px;border-radius:14px;box-shadow:0 8px 22px rgba(0,0,0,.3);opacity:0;transition:opacity .3s;max-width:88%;text-align:center';document.body.appendChild(t);}
+  t.textContent='🔔 '+msg;t.style.opacity='1';clearTimeout(t._tm);t._tm=setTimeout(()=>t.style.opacity='0',4500);
+}
+function fireNotify(msg){
+  if('Notification'in window&&Notification.permission==='granted'){try{new Notification('航一提醒',{body:msg});}catch(e){}}
+  toastMsg(msg);
+}
+function checkReminders(){
+  const r=getReminders();if(!r.enabled)return;
+  const now=new Date();const cur=now.getHours()+':'+String(now.getMinutes()).padStart(2,'0');
+  const ds=todayStr();
+  r.times.forEach(tm=>{
+    const key=ds+'|'+tm.t;
+    if(tm.t===cur&&!_firedToday[key]){
+      _firedToday[key]=true;let msg=tm.label;
+      if(tm.t==='17:00'){const day=getPlanDay(todayStr());let undone=0;day.forEach(b=>(b.items||[]).forEach(it=>{if(!it.done)undone++;}));msg='今日还有 '+undone+' 项未完成，加油完成 ✨';}
+      fireNotify(msg);
+    }
+  });
+}
+function requestReminderPerm(){
+  if(!('Notification'in window)){toastMsg('当前浏览器不支持通知，已用弹窗提醒');return;}
+  Notification.requestPermission().then(p=>{toastMsg(p==='granted'?'已开启系统通知 🔔':'已用应用内弹窗提醒');renderSettings();});
+}
+function toggleReminders(){const r=getReminders();r.enabled=!r.enabled;LS.set('reminders',r);renderSettings();}
+
 window.addEventListener('DOMContentLoaded',init);
 </script>
 </body>
