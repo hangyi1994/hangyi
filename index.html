@@ -1453,29 +1453,24 @@ function getVocab(){return LS.get('vocab',[]);}
 function getBBCList(){return LS.get('bbc',[]);}
 
 function renderEnglish(){
-  let h='<div class="card"><h3>英语学习</h3><div class="subtabs">';
+  const c=$('content');
+  // 每次重建 tab 菜单，避免复用逻辑因 firstChild 变化而丢失菜单
+  let h='<div class="card" id="engTabs"><h3>英语学习</h3><div class="subtabs">';
   [['vocab','词汇本'],['bbc','BBC新闻'],['query','单词查询']].forEach(t=>{
     h+='<button class="'+(engTab===t[0]?'on':'')+'" data-etab="'+t[0]+'">'+t[1]+'</button>';
   });
   h+='</div></div>';
-  const c=$('content');
-  if(!c.querySelector('[data-etab]')) c.innerHTML=h;
-  else {
-    c.querySelectorAll('[data-etab]').forEach(btn=>btn.classList.toggle('on',btn.dataset.etab===engTab));
-    const tabCard=c.firstChild;
-    c.innerHTML='';c.appendChild(tabCard);
-  }
+  c.innerHTML=h;
   c.querySelectorAll('[data-etab]').forEach(btn=>{
     btn.onclick=()=>{if(engTab!==btn.dataset.etab){engTab=btn.dataset.etab;renderEnglish();}};
   });
   if(engTab==='vocab')renderVocab();
   else if(engTab==='bbc')renderBBC();
   else renderQuery();
-  // 今日打卡卡片注入到顶部（子模块渲染后，确保始终在最新内容最上方）
+  // 今日打卡卡片注入到顶部
   const ec=isEngChecked(todayStr()),es=engStats();
   const card='<div class="card" id="engCkCard"><h3>今日英语打卡</h3><div class="row"><button class="ck '+(ec?'on':'')+'" onclick="toggleEngToday()">'+(ec?'✓ 今日已学':'○ 今日未学')+'</button><span class="meta">本周 '+es.week+' 天 · 本月 '+es.month+' 天 · 年度 '+es.year+' 天</span></div></div>';
-  const old=c.querySelector('#engCkCard');
-  if(old)old.outerHTML=card; else c.insertAdjacentHTML('afterbegin',card);
+  c.insertAdjacentHTML('afterbegin',card);
 }
 
 // BBC 每日精读（文章池每日轮换 + 实时查词 + 朗读/跟读 + 单词本联动）
