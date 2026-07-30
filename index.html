@@ -679,24 +679,23 @@ function renderSleep(){
   h+='</div>';
   h+='<div class="note">早睡标准：21:00–23:59 入睡；时长达标：7–10 小时。自动时长按入睡/起床计算；手动时长可包含午休，任一达标即算完成。</div></div>';
 
-  // 近7日列表
+  // 近7日列表（取自动/手动较高值，简洁展示）
   h+='<div class="card"><h3>近 7 日</h3>';
   const recent=logs.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,7);
   if(!recent.length)h+='<div class="empty">暂无记录</div>';
   recent.forEach((l,i)=>{
     const auto=calcSleepMin(l.bed,l.wake);
     const man=l.dur!=null?Math.round(l.dur*60):null;
-    const autoOk=isDurOk(auto),manOk=isDurOk(man);
+    const bestMin=Math.max(auto||0,man||0)||null;
+    const durOk=isDurOk(bestMin);
     const early=isEarly(l.bed);
-    const durMarks=(autoOk&&manOk?'✓✓':(autoOk||manOk?'✓':'✕'));
     h+='<div class="item" style="align-items:center;gap:10px;flex-wrap:wrap">';
-    h+='<div style="min-width:78px;font-weight:700;font-size:14px;color:var(--ink)">'+l.date.slice(5)+'</div>';
-    h+='<div style="min-width:110px;font-size:13px;color:var(--muted)">'+l.bed+'→'+l.wake+'</div>';
+    h+='<div style="min-width:56px;font-weight:700;font-size:14px;color:var(--ink)">'+l.date.slice(5)+'</div>';
+    h+='<div style="min-width:100px;font-size:13px;color:var(--muted)">'+l.bed+'-'+l.wake+'</div>';
+    h+='<div style="min-width:48px;font-size:14px;font-weight:600;color:var(--ink)">'+(bestMin?fmtMin(bestMin):'-')+'</div>';
     h+='<div class="row" style="flex:1;gap:6px;flex-wrap:wrap">';
-    h+='<span class="chip" style="font-size:11px;padding:3px 8px">自动 '+fmtMin(auto)+'</span>';
-    h+='<span class="chip" style="font-size:11px;padding:3px 8px">手动 '+fmtMin(man)+'</span>';
-    h+='<span class="chip '+(early?'on':'')+'" style="font-size:11px;padding:3px 8px">'+(early?'早睡 ✓':'早睡')+'</span>';
-    h+='<span class="chip '+(autoOk||manOk?'on':'')+'" style="font-size:11px;padding:3px 8px">时长 '+durMarks+'</span>';
+    h+='<span class="chip '+(early?'on':'')+'" style="font-size:11px;padding:3px 8px">'+(early?'早睡✓':'早睡✕')+'</span>';
+    h+='<span class="chip '+(durOk?'on':'')+'" style="font-size:11px;padding:3px 8px">'+(durOk?'时长✓':'时长✕')+'</span>';
     h+='</div>';
     h+='<span class="right" style="display:flex;gap:6px;align-items:center"><button class="btn xs" onclick="editSleep(\''+l.date+'\')">编辑</button>';
     h+='<button class="del" onclick="delSleep(\''+l.date+'\')">✕</button></span></div>';
@@ -1260,13 +1259,13 @@ function renderWrite(){
     h+='<button class="'+(writeTab===t[0]?'on':'')+'" data-wtab="'+t[0]+'">'+t[1]+'</button>';
   });
   h+='</div></div>';
+  if(writeTab==='topics')h+=renderTopics();
+  else if(writeTab==='achievement')h+=renderAchievement();
+  else h+=renderWriteList(writeTab);
   $('content').innerHTML=h;
   $('content').querySelectorAll('[data-wtab]').forEach(btn=>{
     btn.onclick=()=>{writeTab=btn.dataset.wtab;renderWrite();};
   });
-  if(writeTab==='topics')renderTopics();
-  else if(writeTab==='achievement')renderAchievement();
-  else renderWriteList(writeTab);
 }
 function setWriteTab(t){writeTab=t;renderWrite();}
 
@@ -1297,7 +1296,7 @@ function renderWriteList(type){
     });
   }
   h+='</div>';
-  $('content').insertAdjacentHTML('beforeend',h);
+  return h;
 }
 function addWrite(type){
   const names={emotion:'情绪',inspire:'灵感',achievement:'成就',review:'影评',invest:'投资',booknote:'读书笔记',diary:'日记'};
@@ -1355,15 +1354,15 @@ function renderAchievement(){
     h+='<button class="del" onclick="delDone('+gi+')">✕</button></div>';
   });
   h+='</div>';
-  $('content').insertAdjacentHTML('beforeend',h);
+  return h;
 }
 function addDone(){
   const text=$('d_text').value.trim();if(!text)return;
   const d=getDoneList();
   d.push({id:uid(),date:$('d_date').value,cat:$('d_cat').value,text});
-  LS.set('done_list',d);renderAchievement();
+  LS.set('done_list',d);renderWrite();
 }
-function delDone(i){const d=getDoneList();d.splice(i,1);LS.set('done_list',d);renderAchievement();}
+function delDone(i){const d=getDoneList();d.splice(i,1);LS.set('done_list',d);renderWrite();}
 
 // 选题推荐（自媒体转化灵感）
 function renderTopics(){
@@ -1403,7 +1402,7 @@ function renderTopics(){
   // store for copy function
   window._topicIdeas=ideas;
 
-  $('content').insertAdjacentHTML('beforeend',h);
+  return h;
 }
 function copyTopic(idx){
   const idea=window._topicIdeas?.[idx];if(!idea)return;
