@@ -1132,8 +1132,17 @@ function drawCardList(){
   const box=$('cardBox');if(!box)return;
   const clearBtn=$('cf_clear');
   if(clearBtn)clearBtn.style.display = (book||tag)?'inline-block':'none';
-  if(!list.length){box.innerHTML='<div class="empty">还没有卡片</div>';return;}
+  const allTags=[...new Set(c.flatMap(x=>(x.tags||'').split(',').map(s=>s.trim()).filter(Boolean)))].sort();
   let h='';
+  if(allTags.length){
+    h+='<div class="row" style="flex-wrap:wrap;margin-bottom:10px">';
+    allTags.forEach(t=>{
+      const active=t===tag;
+      h+='<span class="chip '+(active?'on':'')+'" onclick="quickTag(\''+esc(t).replace(/'/g,"\\'")+'\')">'+esc(t)+'</span>';
+    });
+    h+='</div>';
+  }
+  if(!list.length){h+='<div class="empty">还没有卡片</div>';box.innerHTML=h;return;}
   list.forEach(cd=>{
     const gi=c.indexOf(cd);
     const bn=b.find(x=>x.id===cd.bookId);
@@ -1145,6 +1154,7 @@ function drawCardList(){
     });
     if(bn)h+='<span class="meta">📚 '+esc(bn.title)+'</span>';
     h+='<span class="right"><button class="btn xs" onclick="viewCard('+gi+')">打开</button>';
+    h+='<button class="btn xs" onclick="editCard('+gi+')">编辑</button>';
     h+='<button class="del" onclick="delCard('+gi+')">✕</button></span></div></div>';
   });
   box.innerHTML=h;
@@ -1172,6 +1182,26 @@ function addCard(){
   });
 }
 function delCard(i){const c=getCards();c.splice(i,1);LS.set('cards',c);renderCards();}
+function editCard(i){
+  const c=getCards();const cd=c[i];if(!cd)return;
+  const b=getBooks();
+  showModal({
+    title:'编辑卡片',
+    note:'修改原子观点、标签或来源。',
+    fields:[
+      {id:'text',type:'textarea',placeholder:'写下你的一个原子观点、摘录或灵感…',value:cd.text},
+      {id:'tags',type:'text',placeholder:'标签，用逗号分隔',value:cd.tags||''},
+      {id:'bookId',type:'select',value:cd.bookId||'',options:[{v:'',t:'（不关联）'}].concat(b.map(x=>({v:x.id,t:x.title})))}
+    ],
+    onSave:function(f){
+      if(!f.text)return;
+      c[i].text=f.text.trim();
+      c[i].tags=f.tags.trim();
+      c[i].bookId=f.bookId||'';
+      LS.set('cards',c);renderCards();
+    }
+  });
+}
 
 // 读书笔记（增加日期字段）
 function renderNotes(){
@@ -1553,6 +1583,19 @@ function getDailyBBCArticle(){
 function currentBBCArticle(){return getDailyBBCArticle();}
 function resetBBCArticle(){const list=BBC_ARTICLES;const cur=currentBBCArticle();let idx=list.findIndex(x=>x.title===cur.title);if(idx<0)idx=0;idx=(idx+1)%list.length;const a=JSON.parse(JSON.stringify(list[idx]));a.date=todayStr();LS.set('bbc_article',a);renderEnglish();}
 function allArticleText(a){return a.paragraphs.map(p=>p.en).join(' ');}
+function exportBBC(){
+  const a=currentBBCArticle();
+  let text=a.title+'\n'+a.zhTitle+'\n\n';
+  a.paragraphs.forEach(p=>{text+=p.en+'\n'+p.zh+'\n\n';});
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(()=>toast('文章已复制到剪贴板')).catch(()=>fallbackCopy(text));
+  } else {fallbackCopy(text);}
+}
+function fallbackCopy(text){
+  const ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();
+  try{document.execCommand('copy');toast('文章已复制到剪贴板');}catch(e){alert('复制失败，请手动复制');}
+  document.body.removeChild(ta);
+}
 
 function renderBBC(){
   const a=currentBBCArticle();
@@ -1567,6 +1610,7 @@ function renderBBC(){
   h+='<button class="btn primary" onclick="speakArticle()">🔊 全文朗读</button>';
   h+='<button class="btn pink" onclick="followArticle()">🗣️ 逐句跟读</button>';
   h+='<button class="btn ghost sm" onclick="pasteArticle()">📋 粘贴文章</button>';
+  h+='<button class="btn ghost sm" onclick="exportBBC()">📤 导出</button>';
   h+='</div>';
   h+='<div id="articleBody">';
   a.paragraphs.forEach((p,i)=>{
@@ -1867,8 +1911,20 @@ function renderFocus(){
   const mins=log.reduce((a,x)=>a+(x.dur||0),0);
   if(!timerState.left){timerState.left=s.work*60;timerState.total=s.work*60;}
 
-  const fp=getFocusPlan()[todayStr()]||'';
-  let ph='<div class="card"><h3>今日高价值任务</h3><div class="row"><textarea id="fp_text" placeholder="写下今天最复杂/最需专注的1-3件事（最难的先做）" style="min-height:64px">'+esc(fp)+'</textarea></div><div class="row"><button class="btn primary sm" onclick="saveFocusPlan()">保存</button>'+(fp?'<span class="chip on">已记录</span>':'')+'</div></div>';
+  const tasks=getFocusTasks()[todayStr()]||[];
+  let ph='<div class="card"><h3>今日高价值任务</h3>';
+  ph+='<div class="row"><input id="ft_new" placeholder="添加一个专注任务…" style="flex:1" onkeydown="if(event.key===\'Enter\')addFocusTask()">';
+  ph+='<button class="btn primary sm" onclick="addFocusTask()">+ 添加</button></div>';
+  if(tasks.length){
+    ph+='<div style="margin-top:10px">';
+    tasks.forEach((t,i)=>{
+      ph+='<div class="item"><button class="ck '+(t.done?'on':'')+'" onclick="toggleFocusTask('+i+')">'+(t.done?'✓':'○')+'</button>';
+      ph+='<div class="txt" style="'+(t.done?'text-decoration:line-through;opacity:.6':'')+'">'+esc(t.text)+'</div>';
+      ph+='<button class="del" onclick="delFocusTask('+i+')">✕</button></div>';
+    });
+    ph+='</div>';
+  }
+  ph+='</div>';
   let h=ph+'<div class="card center"><h3 style="justify-content:center">专注记录 · 番茄钟</h3>';
   h+='<div class="timer" id="tmDisplay">'+fmtTime(timerState.left)+'</div>';
   h+='<div class="chip '+(timerState.mode==='work'?'on':'')+'">'+(timerState.mode==='work'?'专注中':'休息中')+'</div>';
@@ -1876,13 +1932,17 @@ function renderFocus(){
   h+='<button class="btn primary" id="toggleBtn" onclick="toggleTimer()">'+(timerState.running?'⏸ 暂停':'▶ 开始')+'</button>';
   h+='<button class="btn ghost" onclick="resetTimer()">重置</button>';
   h+='<button class="btn ghost" onclick="switchTimerMode()">切→'+(timerState.mode==='work'?'休息':'专注')+'</button></div>';
+  h+='<div class="row" style="justify-content:center;margin-top:10px;gap:8px;flex-wrap:wrap">';
+  h+='<select id="ft_sel" style="max-width:220px"><option value="">（不关联任务）</option>'
+    +tasks.map(t=>'<option value="'+t.id+'">'+esc(t.text)+'</option>').join('')
+    +'</select></div>';
   h+='<div class="note">专注 '+s.work+'min / 休息 '+s.break+'min（设置里可改）</div></div>';
 
   h+='<div class="card"><h3>今日专注</h3><div class="row">';
   h+='<span class="chip on">'+log.length+' 段</span><span class="chip">'+mins+' 分钟</span></div>';
   if(log.length){
     h+='<div style="margin-top:6px">'+log.slice().reverse().map(x=>
-      '<div class="item"><div class="txt">'+(x.mode==='work'?'🔥 专注':'☕ 休息')+' '+x.dur+'min</div><div class="meta">'+x.start+'</div></div>'
+      '<div class="item"><div class="txt">'+(x.mode==='work'?'🔥 专注':'☕ 休息')+' '+x.dur+'min'+(x.taskText?' · '+esc(x.taskText):'')+'</div><div class="meta">'+x.start+'</div></div>'
     ).join('')+'</div>';
   }
   h+='</div>';
@@ -1907,7 +1967,9 @@ function completeTimer(){
   clearInterval(timer);timerState.running=false;
   const s=getFocusSet();const log=getFocusLog();
   const dur=timerState.mode==='work'?s.work:s.break;
-  log.push({date:todayStr(),start:nowHMS(),dur,mode:timerState.mode});
+  const sel=$('ft_sel');let taskId='',taskText='';
+  if(sel&&sel.value){const opt=sel.options[sel.selectedIndex];taskId=sel.value;taskText=opt?opt.text:'';}
+  log.push({date:todayStr(),start:nowHMS(),dur,mode:timerState.mode,taskId,taskText});
   LS.set('focus_log',log);
   // voice notification
   if('speechSynthesis'in window){
@@ -2441,6 +2503,48 @@ function dietComplianceWeek(){
 /* ---- 专注：今日高价值任务 ---- */
 function getFocusPlan(){return LS.get('focus_plan',{});}
 function saveFocusPlan(){const v=$('fp_text')?$('fp_text').value.trim():'';const l=getFocusPlan();l[todayStr()]=v;LS.set('focus_plan',l);renderFocus();}
+function getFocusTasks(){
+  const tasks=LS.get('focus_tasks',{});
+  const today=todayStr();
+  if(!tasks[today]){
+    const plan=getFocusPlan()[today];
+    if(plan&&plan.trim()){
+      tasks[today]=[{id:uid(),text:plan.trim(),done:false}];
+      LS.set('focus_tasks',tasks);
+    } else {
+      tasks[today]=[];
+    }
+  }
+  return tasks;
+}
+function setFocusTasks(date,arr){
+  const tasks=LS.get('focus_tasks',{});
+  tasks[date]=arr;
+  LS.set('focus_tasks',tasks);
+}
+function addFocusTask(){
+  const inp=$('ft_new');if(!inp)return;
+  const v=inp.value.trim();if(!v)return;
+  const today=todayStr();
+  const tasks=getFocusTasks()[today]||[];
+  tasks.push({id:uid(),text:v,done:false});
+  setFocusTasks(today,tasks);
+  renderFocus();
+}
+function delFocusTask(i){
+  const today=todayStr();
+  const tasks=getFocusTasks()[today]||[];
+  tasks.splice(i,1);
+  setFocusTasks(today,tasks);
+  renderFocus();
+}
+function toggleFocusTask(i){
+  const today=todayStr();
+  const tasks=getFocusTasks()[today]||[];
+  if(tasks[i])tasks[i].done=!tasks[i].done;
+  setFocusTasks(today,tasks);
+  renderFocus();
+}
 /* ---- 身体：本周看板 ---- */
 function bodyWeekStats(){
   const ws=weekStart();
