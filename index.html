@@ -291,16 +291,16 @@ function showLoading(msg){
 
 /* ============ module definitions ============ */
 const MODULES=[
+  {id:'overview',name:'总览',ic:'◎'},
   {id:'plan',    name:'每日打卡',ic:'✓'},
   {id:'body',    name:'身体管理',ic:'❤'},
   {id:'write',   name:'写作入口',ic:'✎'},
   {id:'read',    name:'阅读任务',ic:'📚'},
   {id:'english', name:'英语学习',ic:'🔤'},
   {id:'focus',   name:'专注记录',ic:'⏱'},
-  {id:'overview',name:'总览',ic:'◎'},
   {id:'settings',name:'设置',ic:'⚙'},
 ];
-let curMod='plan';
+let curMod='overview';
 
 /* ============ navigation ============ */
 function buildNav(){
@@ -397,7 +397,7 @@ function confirmModal(){
    ================================================================ */
 let planFilter='all';
 /* 用户默认每日计划模板（可在「⚙ 管理」中完全自定义：增/删/改、设必做或选做） */
-const PLAN_TPL_VERSION='2026-07-30-v1'; // bump this when DEFAULT_PLAN changes to force update
+const PLAN_TPL_VERSION='2026-07-30-v2'; // bump this when DEFAULT_PLAN changes to force update
 const DEFAULT_PLAN=[
   {time:'6:30-8:30',items:[
     {t:'起床·唤醒拉伸·拉窗帘',must:true},
@@ -2166,7 +2166,8 @@ function renderOverview(){
   if(rp.weekly!==wk)banner+='<div class="banner"><span>📊 新一周开始了，看看上周回顾吧</span><button class="btn sm primary go" onclick="goReport(\'week\')">查看周报</button></div>';
   if(rp.monthly!==mo)banner+='<div class="banner"><span>📊 新一月到了，上月回顾已就绪</span><button class="btn sm pink go" onclick="goReport(\'month\')">查看月报</button></div>';
 
-  let h=banner;
+  let h='<div style="text-align:center;font-size:19px;font-weight:700;letter-spacing:3px;color:var(--accent);padding:4px 0 14px">自律，向内自洽　向外自由</div>';
+  h+=banner;
   h+='<div class="banner"><span>☀️ 你好，'+(prof.name||'航一')+'。今天也要好好照顾自己 ✨</span></div>';
 
   const ringC=2*Math.PI*52, ringOff=(ringC*(1-pct/100)).toFixed(1);
@@ -2238,7 +2239,7 @@ function init(){
   if(storedVer!==PLAN_TPL_VERSION){LS.set('plan_tpl',DEFAULT_PLAN);LS.set('plan_tpl_version',PLAN_TPL_VERSION);}
   const hash=location.hash.replace('#','');
   if(MODULES.some(m=>m.id===hash)) go(hash);
-  else go('plan');
+  else go('overview');
   autoFetchOnStart();
   startKeepAlive();
   checkReminders();
