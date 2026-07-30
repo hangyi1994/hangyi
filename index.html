@@ -291,18 +291,15 @@ function showLoading(msg){
 
 /* ============ module definitions ============ */
 const MODULES=[
-  {id:'overview',name:'总览',ic:'◎'},
   {id:'plan',    name:'每日打卡',ic:'✓'},
-  {id:'invest',  name:'价值投资',ic:'📈'},
-  {id:'write',   name:'写作入口',ic:'✎'},
-  {id:'english', name:'英语学习',ic:'🔤'},
   {id:'body',    name:'身体管理',ic:'❤'},
+  {id:'write',   name:'写作入口',ic:'✎'},
   {id:'read',    name:'阅读任务',ic:'📚'},
+  {id:'english', name:'英语学习',ic:'🔤'},
   {id:'focus',   name:'专注记录',ic:'⏱'},
-  {id:'report',  name:'回顾报告',ic:'📊'},
   {id:'settings',name:'设置',ic:'⚙'},
 ];
-let curMod='overview';
+let curMod='plan';
 
 /* ============ navigation ============ */
 function buildNav(){
@@ -324,7 +321,6 @@ function hasNew(id){return false;}
 function go(id){
   if(curMod===id) return; // already here, skip
   curMod=id;
-  if(id==='invest') LS.set('news_new',false);
   if(id==='english') LS.set('bbc_new',false);
 
   const m=MODULES.find(x=>x.id===id);
@@ -339,7 +335,7 @@ function go(id){
   // Render directly — no loading skeleton flash
   const renders={
     overview:renderOverview, plan:renderPlan, body:renderBody,
-    read:renderRead, write:renderWrite, invest:renderInvest,
+    write:renderWrite, read:renderRead,
     english:renderEnglish, focus:renderFocus,
     report:()=>renderReport('week'), settings:renderSettings
   };
@@ -428,8 +424,8 @@ const DEFAULT_PLAN=[
     {t:'晚餐(20:00前+少精制碳水)',must:true},
     {t:'拉窗帘(20:30前调灯光)·梳头30下·卸妆·洗漱·洗澡·护肤(保湿+面膜+提拉)',must:true},
     {t:'睡前放松(金刚坐+欧阳春晓肩背15min·涌泉穴+臀桥+摇腿+二郎腿各50下·睡前拉伸·还阳卧+揉腹1-3次)',must:true},
-    {t:'保证7-8h优质睡眠',must:true},
-    {t:'阅读投资10页·冥想(22:30前+正念478呼吸法)',must:true}
+    {t:'阅读投资10页·冥想(22:30前+正念478呼吸法)',must:true},
+    {t:'保证7-8h优质睡眠',must:true}
   ]}
 ];
 function getPlanTpl(){return LS.get('plan_tpl',[]);}
@@ -926,31 +922,36 @@ function getDietLogs(){return LS.get('diet',[]);}
 function renderDiet(){
   const logs=getDietLogs();
   const dc=getDietChk()[todayStr()]||{bf:false,lunch:false,dinner:false,mv:false,water:0};
-  let ck='<div class="card"><h3>今日饮食打卡</h3><div class="row" style="flex-wrap:wrap;gap:6px">';
+  let ck='<div class="card"><h3>今日饮食打卡</h3>';
+  ck+='<div class="row" style="flex-wrap:wrap;gap:8px;margin-bottom:12px">';
   ck+='<button class="ck '+(dc.bf?'on':'')+'" onclick="toggleDiet(\'bf\')">'+(dc.bf?'✓ ':'')+'早餐</button>';
   ck+='<button class="ck '+(dc.lunch?'on':'')+'" onclick="toggleDiet(\'lunch\')">'+(dc.lunch?'✓ ':'')+'午餐</button>';
   ck+='<button class="ck '+(dc.dinner?'on':'')+'" onclick="toggleDiet(\'dinner\')">'+(dc.dinner?'✓ ':'')+'晚餐</button>';
   ck+='<button class="ck '+(dc.mv?'on':'')+'" onclick="toggleDiet(\'mv\')">'+(dc.mv?'✓ ':'')+'多维</button>';
-  ck+='<input id="d_water" type="number" step="0.1" value="'+(dc.water||'')+'" placeholder="饮水 L" style="max-width:90px" onchange="setWater(this.value)">';
-  ck+='</div></div>';
+  ck+='</div>';
+  ck+='<div class="row" style="justify-content:center;gap:12px;align-items:center;background:var(--bg1);border:1.5px solid var(--line);border-radius:12px;padding:12px 16px;margin-top:4px">';
+  ck+='<span style="font-weight:600;font-size:15px">💧 饮水</span>';
+  ck+='<input id="d_water" type="number" step="0.1" min="0" value="'+(dc.water||'')+'" placeholder="__" style="width:96px;text-align:center;font-size:18px;padding:8px;border-radius:10px;border:1.5px solid var(--line)">';
+  ck+='<span style="color:var(--muted)">升 (L)</span></div>';
+  ck+='</div>';
+
   let h=ck+'<div class="card"><h3>饮食记录</h3>';
   h+='<div class="note">原则：七分饱 · 粗碳 · 优质蛋白 · 深绿蔬菜 · 少精制碳水</div>';
-  h+='<div class="row" style="flex-wrap:wrap;gap:6px">';
-  h+='<input id="d_date" type="date" value="'+todayStr()+'" style="max-width:120px">';
-  h+='<select id="d_meal" style="max-width:80px"><option>早</option><option>午</option><option>晚</option><option>加餐</option></select>';
-  h+='<input id="d_food" placeholder="吃了什么（可详细记录）" style="flex:1;min-width:140px">';
-  h+='<select id="d_healthy" style="max-width:110px"><option value="">健康均衡?</option><option value="是">是</option><option value="否">否</option><option value="部分">部分</option></select>';
-  h+='<input id="d_kcal" placeholder="kcal" type="number" style="max-width:80px">';
-  h+='<button class="btn primary" onclick="saveDiet()">记录</button></div></div>';
+  h+='<div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">';
+  h+='<div class="row" style="gap:8px"><input id="d_date" type="date" value="'+todayStr()+'" style="max-width:150px">';
+  h+='<select id="d_meal" style="max-width:90px"><option>早</option><option>午</option><option>晚</option><option>加餐</option></select>';
+  h+='<input id="d_kcal" type="number" placeholder="热量 kcal" style="max-width:120px"></div>';
+  h+='<input id="d_food" placeholder="吃了什么？（可详细记录：菜品 + 分量）" style="padding:11px;font-size:15px">';
+  h+='<div class="row" style="gap:8px"><select id="d_healthy" style="flex:1"><option value="">是否健康均衡？</option><option value="是">✅ 是，均衡</option><option value="部分">🟡 部分均衡</option><option value="否">⚠️ 否，偏油腻/过量</option></select>';
+  h+='<button class="btn primary" onclick="saveDiet()">＋ 记录</button></div>';
+  h+='</div></div>';
 
-  // 今日汇总
   const todayLogs=logs.filter(x=>x.date===todayStr());
   if(todayLogs.length){
     const k=todayLogs.reduce((s,x)=>s+(+x.kcal||0),0);
     h+='<div class="card"><div class="row"><span class="chip on">今日 '+todayLogs.length+' 餐</span><span class="chip">'+k+' kcal</span></div></div>';
   }
-
-  h+='<div class="card"><h3>记录</h3>';
+  h+='<div class="card"><h3>今日记录</h3>';
   if(!logs.length)h+='<div class="empty">还没有饮食记录</div>';
   logs.slice().reverse().slice(0,20).forEach(x=>{
     const gi=logs.indexOf(x);
@@ -971,375 +972,6 @@ function saveDiet(){
   const logs=getDietLogs();logs.push({date,meal,food,healthy,kcal});LS.set('diet',logs);renderDiet();
 }
 function delDiet(i){const logs=getDietLogs();logs.splice(i,1);LS.set('diet',logs);renderDiet();}
-
-
-/* ================================================================
-   模块 3：价值投资（大盘走向 / 自选监测 / 资讯收集）
-   修复 undefined bug · 自动联动更新
-   ================================================================ */
-let investTab='idx';
-function getStocks(){return LS.get('stocks',[]);}
-function getNewsList(){return LS.get('news',[]);}
-
-function renderInvest(){
-  let h='<div class="card"><h3>价值投资</h3><div class="subtabs">';
-  [['idx','大盘走向'],['stocks','自选监测'],['news','资讯收集']].forEach(t=>{
-    h+='<button class="'+(investTab===t[0]?'on':'')+'" data-itab="'+t[0]+'">'+t[1]+'</button>';
-  });
-  h+='</div></div>';
-  const c=$('content');
-  if(!c.querySelector('[data-itab]')) c.innerHTML=h;
-  else {
-    c.querySelectorAll('[data-itab]').forEach(btn=>btn.classList.toggle('on',btn.dataset.itab===investTab));
-    const tabCard=c.firstChild;
-    c.innerHTML='';c.appendChild(tabCard);
-  }
-  c.querySelectorAll('[data-itab]').forEach(btn=>{
-    btn.onclick=()=>{if(investTab!==btn.dataset.itab){investTab=btn.dataset.itab;renderInvest();}};
-  });
-  if(investTab==='idx'){renderMarketIdx();autoRefreshIdx();}
-  else if(investTab==='stocks')renderStockWatch();
-  else renderNewsFeed();
-}
-
-// ---- 大盘走向（修复 undefined）----
-const IDX_CODES=['sh000001','sz399001','sz399006','sh000300'];
-const IDX_NAMES={'sh000001':'上证指数','sz399001':'深证成指','sz399006':'创业板指','sh000300':'沪深300'};
-let _idxData={}; // cache
-
-function renderMarketIdx(){
-  let h='<div class="card"><div class="row" style="justify-content:space-between"><h3 style="margin:0">大盘走向</h3>';
-  h+='<button class="btn sm" onclick="refreshIdx()">↻ 刷新</button></div>';
-  h+='<div id="idxbox">';
-  if(Object.keys(_idxData).length){
-    h+=renderIdxRows();
-  } else {
-    h+='<div class="center" style="padding:16px"><span class="spin"></span>加载中…</div>';
-  }
-  h+='</div>';
-  h+='<div class="note" id="idxnote">数据来自腾讯财经接口，红涨绿跌。打开模块自动刷新。</div></div>';
-  $('content').insertAdjacentHTML('beforeend',h);
-}
-function renderIdxRows(){
-  let h='';
-  IDX_CODES.forEach(code=>{
-    const nm=IDX_NAMES[code]||code;
-    const d=_idxData[code];
-    if(!d){h+='<div class="item"><div class="txt">'+nm+'</div><div class="meta">获取中…</div></div>';return;}
-    const price=d.price||'—',chg=d.chg||'—',pct=d.pct||'—';
-    const up=(d.chgNum||0)>=0;
-    h+='<div class="item"><div class="txt"><b>'+nm+'</b></div>';
-    const clr=up?'var(--bad)':'var(--good)';
-    h+="<div style=\"text-align:right;min-width:110px;color:"+clr+"\">";
-    h+='<b style="font-size:16px">'+price+'</b><br>';
-    h+='<span class="meta">'+(up?'+':'')+chg+'  '+(up?'+':'')+pct+'%</span></div></div>';
-  });
-  return h||'<div class="empty">暂无数据</div>';
-}
-function refreshIdx(){
-  const note=$('idxnote');if(note)note.textContent='刷新中…';
-  fetchMarketData().then(ok=>{
-    const box=$('idxbox');if(box)box.innerHTML=renderIdxRows();
-    const note2=$('idxnote');if(note2)note2.textContent=ok?"数据已更新 "+new Date().toLocaleTimeString():"获取失败，请检查网络后重试";
-  });
-}
-function autoRefreshIdx(){
-  // auto-refresh when entering this tab
-  fetchMarketData().then(ok=>{
-    const box=$('idxbox');if(box)box.innerHTML=renderIdxRows();
-  });
-}
-
-// Market data fetch — robust JSONP with cache-busting & timeout
-let _idxFetching=false;
-function fetchMarketData(){
-  return new Promise(resolve=>{
-    if(_idxFetching){resolve(Object.keys(_idxData).length>0);return;}
-    _idxFetching=true;
-    // cleanup old scripts
-    document.querySelectorAll('script[data-src="market"]').forEach(s=>s.remove());
-    const codes=IDX_CODES;
-    const cbName='_idxCb_'+Date.now();
-    const s=document.createElement('script');
-    s.setAttribute('data-src','market');
-    // Use union-style query for qt.gtimg.cn
-    s.src='https://qt.gtimg.cn/q='+codes.join(',')+'&t='+Date.now();
-    let done=false;
-    const timer=setTimeout(()=>{
-      if(!done){done=true;_idxFetching=false;cleanup();resolve(false);}
-    },12000);
-    function cleanup(){
-      try{delete window[cbName];}catch(e){}
-      if(s.parentNode)s.remove();
-    }
-    window[cbName]=()=>{
-      if(done)return;
-      done=true;_idxFetching=false;clearTimeout(timer);
-      let ok=false;
-      codes.forEach(code=>{
-        try {
-          const raw=window['v_'+code];
-          if(raw){
-            // Tencent format: "1~name~code~price~change~pct~...~..."
-            const parts=raw.replace(/^"|"$/g,'').split('~');
-            if(parts.length>=6){
-              _idxData[code]={
-                name:parts[1]||'',price:parts[3],chg:parts[4],pct:parts[5],
-                chgNum:parseFloat(parts[4])||0
-              };
-              ok=true;
-            }
-          }
-        } catch(e){}
-      });
-      cleanup();
-      resolve(ok);
-    };
-    s.onerror=()=>{if(!done){done=true;_idxFetching=false;cleanup();resolve(false);}};
-    document.head.appendChild(s);
-  });
-}
-
-// ---- 自选监测 ----
-function renderStockWatch(){
-  const s=getStocks();
-  let h='<div class="card"><div class="row" style="justify-content:space-between"><h3 style="margin:0">自选监测</h3>';
-  h+='<button class="btn primary sm" onclick="addStock()">+ 自选</button>';
-  h+='<button class="btn sm" onclick="refreshStockPrices()">↻ 抓取价格</button></div>';
-  h+='<div class="note">代码如 sh600519 / sz000001。自动抓腾讯财经现价。</div></div>';
-
-  if(!s.length)h+='<div class="card"><div class="empty">还没有自选，点「+ 自选」添加</div></div>';
-
-  s.forEach((st,i)=>{
-    const cost=(st.cost||0)*(st.shares||0);
-    const mv=((st.cur||st.cost)||0)*(st.shares||0);
-    const pl=mv-cost;const plp=cost?pl/cost*100:0;const up=pl>=0;
-    h+='<div class="card"><div class="row" style="justify-content:space-between">';
-    h+='<b>'+esc(st.name||st.code)+'</b>';
-    const clr3=up?'':'background:var(--pink-soft);color:var(--pink-dept)';
-    h+="<span class=\"chip "+(up?"on":"")+"\" style=\""+clr3+"\">"
-      +(up?'+':'')+pl.toFixed(0)+' ('+(up?'+':'')+plp.toFixed(1)+'%)</span></div>';
-    h+='<div class="grid cols2" style="font-size:13px">';
-    h+='<div>成本 '+st.cost+' × '+(st.shares||0)+'</div>';
-    const clr2=up?'var(--bad)':'var(--good)';
-    h+="<div>现价 <span style=\"font-weight:700;color:"+clr2+"\">"+(st.cur||'—')+"</span></div>";
-    h+='<div>市值 '+mv.toFixed(0)+'</div><div>盈亏 '+pl.toFixed(0)+'</div>';
-    h+='</div>';
-    // analysis framework
-    h+='<details style="margin-top:8px"><summary class="mini" style="cursor:pointer">分析框架 ▾</summary>';
-    h+='<div style="margin-top:8px;display:grid;gap:6px">';
-    h+='<div><div class="meta">行业逻辑</div><textarea id="sf_'+i+'_logic" rows="4" onchange="setStockF('+i+',\'logic\',this.value)">'+esc(st.logic||'')+'</textarea></div>';
-    h+='<div class="row"><div class="meta">买价</div><input id="sf_'+i+'_buy" value="'+esc(st.buy||'')+'" onchange="setStockF('+i+',\'buy\',this.value)" style="max-width:100px">';
-    h+='<div class="meta">卖价</div><input id="sf_'+i+'_sell" value="'+esc(st.sell||'')+'" onchange="setStockF('+i+',\'sell\',this.value)" style="max-width:100px"></div>';
-    h+='<div><div class="meta">跟踪要点</div><textarea id="sf_'+i+'_track" rows="4" onchange="setStockF('+i+',\'track\',this.value)">'+esc(st.track||'')+'</textarea></div>';
-    h+='<div><div class="meta">风险</div><textarea id="sf_'+i+'_risk" rows="4" onchange="setStockF('+i+',\'risk\',this.value)">'+esc(st.risk||'')+'</textarea></div>';
-    h+='</div></details>';
-    h+='<div class="right" style="margin-top:6px"><button class="del" onclick="delStock('+i+')">删除</button></div></div>';
-  });
-  $('content').insertAdjacentHTML('beforeend',h);
-}
-function addStock(){
-  showModal({
-    title:'添加自选股',
-    note:'填写股票信息，代码格式如 sh600519 / sz000001',
-    fields:[
-      {id:'code',type:'text',placeholder:'股票代码（如 sh600519）',label:''},
-      {id:'name',type:'text',placeholder:'名称（可选，默认用代码）',label:''},
-      {id:'cost',type:'number',placeholder:'成本价',label:''},
-      {id:'shares',type:'number',placeholder:'持股数',label:''}
-    ],
-    onSave:function(f){
-      if(!f.code)return;
-      const cost=+f.cost||0,shares=+f.shares||0;
-      const s=getStocks();
-      s.push({code:f.code.trim(),name:f.name||f.code,cost,shares,cur:cost});
-      LS.set('stocks',s);renderStockWatch();
-    }
-  });
-}
-function delStock(i){const s=getStocks();s.splice(i,1);LS.set('stocks',s);renderStockWatch();}
-function setStockCur(i,v){const s=getStocks();s[i].cur=+v||0;LS.set('stocks',s);renderStockWatch();}
-function setStockF(i,f,v){const s=getStocks();s[i][f]=v;LS.set('stocks',s);}
-function refreshStockPrices(){
-  const s=getStocks();if(!s.length)return;
-  const codes=s.map(st=>st.code);
-  // use same JSONP approach
-  document.querySelectorAll('script[data-src="stock"]').forEach(sc=>sc.remove());
-  const scr=document.createElement('script');
-  scr.setAttribute('data-src','stock');
-  scr.src='https://qt.gtimg.cn/q='+codes.join(',');
-  scr.onload=()=>{
-    setTimeout(()=>{
-      s.forEach(st=>{
-        try{
-          const raw=window['v_'+st.code];
-          if(raw){
-            const parts=raw.replace(/^"|"$/g,'').split('~');
-            if(parts.length>=4) st.cur=parseFloat(parts[3])||st.cur;
-          }
-        }catch(e){}
-      });
-      LS.set('stocks',s);renderStockWatch();
-    },200);
-  };
-  scr.onerror=()=>renderStockWatch();
-  document.head.appendChild(scr);
-}
-
-// ---- 资讯收集（自动联动更新）----
-let _newsLastFetch=0;
-function renderNewsFeed(){
-  const list=getNewsList();
-  const ts=LS.get('news_ts',0);
-  let h='<div class="card"><div class="row" style="justify-content:space-between">';
-  h+='<h3 style="margin:0">资讯收集 <span class="sub">财经热点</span></h3>';
-  h+='<button class="btn sm" onclick="doRefreshNews()">↻ 刷新</button></div>';
-  h+='<div class="row"><input id="n_title" placeholder="手动添加标题" style="flex:1">';
-  h+='<input id="n_link" placeholder="链接(可选)" style="max-width:180px">';
-  h+='<button class="btn pink sm" onclick="addNewsManually()">＋</button></div>';
-  h+='<div class="note" id="newsinfo">'
-    +(ts?'上次更新：'+new Date(ts).toLocaleString():'打开即自动抓取最新资讯')
-    +'</div></div>';
-
-  h+='<div class="card"><h3>资讯流</h3>';
-  if(!list.length)h+='<div class="empty">暂无资讯</div>';
-  list.slice(0,30).forEach((n,i)=>{
-    h+='<div class="item"><div class="txt">';
-    if(n.link)h+='<a href="'+esc(n.link)+'" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;font-weight:600">'+esc(n.title)+'</a>';
-    else h+='<b>'+esc(n.title)+'</b>';
-    if(n.desc)h+='<div class="meta">'+esc(n.desc).slice(0,100)+'</div>';
-    h+='<div class="meta">'+(n.src||'')+' · '+(n.date||'')+'</div></div>';
-    h+='<button class="del" onclick="delNews('+i+')">✕</button></div>';
-  });
-  h+='</div>';
-  $('content').insertAdjacentHTML('beforeend',h);
-
-  // auto-fetch on open (debounced: only once per 5 min)
-  if(Date.now()-_newsLastFetch>300000) doRefreshNews();
-}
-function addNewsManually(){
-  const t=$('n_title').value.trim();if(!t)return;
-  const l=$('n_link').value.trim();
-  const list=getNewsList();
-  list.unshift({title:t,link:l,desc:'',date:todayStr(),src:'手动'});
-  LS.set('news',list);renderNewsFeed();
-}
-function delNews(i){const list=getNewsList();list.splice(i,1);LS.set('news',list);renderNewsFeed();}
-function doRefreshNews(){
-  const info=$('newsinfo');if(info)info.innerHTML='<span class="spin"></span>抓取中…';
-  _newsLastFetch=Date.now();
-  fetchFinanceNews().then(ok=>{
-    if(ok) LS.set('news_new',true);
-    const info2=$('newsinfo');
-    if(info2) info2.textContent=ok?'已更新 · '+new Date().toLocaleTimeString():'获取失败，可稍后重试或手动添加';
-    if(ok) renderNewsFeed();
-  });
-}
-
-// Finance news fetch — multiple Chinese sources + fallback demo data
-let _newsFetching=false;
-async function fetchFinanceNews(){
-  if(_newsFetching) return false;
-  _newsFetching=true;
-  const done=()=>{_newsFetching=false;};
-
-  // Source 1: Sina Finance hot news (JSONP, reliable in China)
-  try{
-    const data=await jsonpGet('https://feed.mix.sina.com.cn/api/roll/get?pageid=155&lid=2514&num=10&versionNumber=1.4.5&_t='+Date.now(),'sinaNewsCb');
-    if(data&&data.result&&Array.isArray(data.result.data)){
-      const items=data.result.data.slice(0,12).map(a=>({
-        title:a.title||'',link:a.url||a.link||'',
-        desc:a.summary||a.intro||a.cmt_title||'',date:todayStr(),src:'新浪财经'
-      }));
-      const existing=getNewsList();
-      const existTitles=new Set(existing.map(x=>x.title));
-      const fresh=items.filter(x=>x.title&&!existTitles.has(x.title));
-      if(fresh.length){
-        LS.set('news',[...fresh,...existing]);
-        LS.set('news_ts',Date.now());
-      }
-      done();return true;
-    }
-  } catch(e){/* next */}
-
-  // Source 2: Tencent finance (alternative endpoint)
-  try{
-    const data=await jsonpGet('https://r.inews.qq.com/cgWeb/search/hotSearch?count=10&lang=zh-CN&_t='+Date.now(),'txNewsCb');
-    if(data&&data.data&&Array.isArray(data.data.list)){
-      const items=data.data.list.slice(0,12).map(a=>({
-        title:a.title||'',link:a.url||'',
-        desc:a.abstract||a.summary||'',date:todayStr(),src:'腾讯新闻'
-      }));
-      const existing=getNewsList();
-      const existTitles=new Set(existing.map(x=>x.title));
-      const fresh=items.filter(x=>x.title&&!existTitles.has(x.title));
-      if(fresh.length){
-        LS.set('news',[...fresh,...existing]);
-        LS.set('news_ts',Date.now());
-      }
-      done();return true;
-    }
-  } catch(e){/* next */}
-
-  // Source 3: Eastmoney Jin10 flash news
-  try{
-    const data=await jsonpGet('https://cdn.jin10.com/dc/recommend/list?channel=-8200&limit=10&vip=1&_t='+Date.now(),'jin10Cb');
-    if(data&&Array.isArray(data.data)){
-      const items=data.data.slice(0,10).map(a=>({
-        title:a.data?.content||a.content||'',link:a.data?.link||a.link||'',
-        desc:'',date:todayStr(),src:'金十数据'
-      })).filter(x=>x.title);
-      const existing=getNewsList();
-      const existTitles=new Set(existing.map(x=>x.title));
-      const fresh=items.filter(x=>!existTitles.has(x.title));
-      if(fresh.length){
-        LS.set('news',[...fresh,...existing]);
-        LS.set('news_ts',Date.now());
-      }
-      done();return true;
-    }
-  } catch(e){/* fall through */}
-
-  // All sources failed — inject demo data on first run so UI isn't empty
-  const existing=getNewsList();
-  if(!existing.length){
-    const demo=[
-      {title:'【演示】市场动态：关注宏观经济政策走向',desc:'请点击「刷新」按钮尝试重新抓取，或手动添加你关注的资讯。',date:todayStr(),src:'引导'},
-      {title:'【演示】价值投资核心：安全边际与能力圈',desc:'自动抓取需要网络连接，当前接口可能受限。',date:todayStr(),src:'引导'},
-      {title:'【演示】长期主义：复利的力量在于时间',desc:'可手动添加标题和链接来构建你的资讯库。',date:todayStr(),src:'引导'},
-    ];
-    LS.set('news',demo);LS.set('news_ts',Date.now());
-    done();return true;
-  }
-
-  done();
-  return false;
-}
-
-// Generic JSONP helper
-function jsonpGet(url,cbName){
-  return new Promise((resolve,reject)=>{
-    const name=cbName||'jp_'+Math.random().toString(36).slice(2,8);
-    const s=document.createElement('script');
-    let done=false;
-    const timer=setTimeout(()=>{
-      if(!done){done=true;cleanup();resolve(null);}
-    },7000);
-    window[name]=data=>{
-      if(done)return;
-      done=true;cleanup();clearTimeout(timer);
-      resolve(data);
-    };
-    function cleanup(){
-      try{delete window[name];}catch(e){}
-      if(s.parentNode)s.remove();
-    }
-    s.onerror=()=>{if(!done){done=true;cleanup();resolve(null);}};
-    // append unique param to prevent caching
-    s.src=url+(url.includes('?')?'&':'?')+'_t='+Date.now()+'&callback='+name;
-    document.head.appendChild(s);
-  });
-}
 
 
 /* ================================================================
@@ -1601,7 +1233,7 @@ function setWriteTab(t){writeTab=t;renderWrite();}
 function renderWriteList(type){
   const typeNames={all:'全部',emotion:'情绪',inspire:'灵感',invest:'投资',review:'影评'};
   const name=typeNames[type]||type;
-  const list=getWrites().filter(w=>type==='all'||w.type===type).slice().reverse();
+  const list=getWrites().filter(w=>type==='all'||w.type===type).slice().sort((a,b)=>b.date.localeCompare(a.date));
 
   let h='<div class="card"><div class="row" style="justify-content:space-between"><h3 style="margin:0">'+name+'</h3>';
   h+='<button class="btn pink sm" onclick="addWrite(\''+(type==='all'?'emotion':type)+'\')">+ 新'+name+'</button></div></div>';
@@ -1610,17 +1242,16 @@ function renderWriteList(type){
   if(!list.length)h+='<div class="empty">还没有，写一篇吧 ✍️</div>';
   else{
     list.forEach(w=>{
-      const gi=getWrites().indexOf(w);
       const typeTag={emotion:'情绪',inspire:'灵感',invest:'投资',review:'影评',booknote:'读书笔记',diary:'日记'}[w.type]||w.type;
       h+='<div class="item" style="flex-direction:column;align-items:stretch" data-wid="'+w.id+'">';
       h+='<div class="row"><b>'+esc(w.title||'(无标题)')+'</b>';
       h+='<span class="chip">'+typeTag+'</span>';
       h+='<span class="meta">'+w.date+' · '+(w.body||'').length+' 字</span>';
-      h+='<span class="right"><button class="btn xs" onclick="viewWrite('+gi+')">打开</button>';
-      h+='<button class="btn xs" onclick="editWrite('+gi+')">编辑</button>';
-      h+='<button class="del" onclick="delWrite('+gi+')">✕</button></span></div>';
+      h+='<span class="right"><button class="btn xs" onclick="viewWriteById(\''+w.id+'\')">打开</button>';
+      h+='<button class="btn xs" onclick="editWriteById(\''+w.id+'\')">编辑</button>';
+      h+='<button class="del" onclick="delWriteById(\''+w.id+'\')">✕</button></span></div>';
       const preview=w.body.length>200?w.body.slice(0,200)+'…':w.body;
-      h+='<div class="meta" style="white-space:pre-wrap;margin-top:4px;cursor:pointer" onclick="viewWrite('+gi+')">'+esc(preview)+'</div>';
+      h+='<div class="meta" style="white-space:pre-wrap;margin-top:4px;cursor:pointer" onclick="viewWriteById(\''+w.id+'\')">'+esc(preview)+'</div>';
       h+='</div>';
     });
   }
@@ -1647,6 +1278,9 @@ function addWrite(type){
   });
 }
 function delWrite(i){const w=getWrites();w.splice(i,1);LS.set('writes',w);syncWriteLog();renderWrite();}
+function viewWriteById(id){const all=getWrites();const i=all.findIndex(w=>w.id===id);if(i>=0)viewWrite(i);}
+function editWriteById(id){const all=getWrites();const i=all.findIndex(w=>w.id===id);if(i>=0)editWrite(i);}
+function delWriteById(id){const all=getWrites();const i=all.findIndex(w=>w.id===id);if(i>=0)delWrite(i);}
 function syncWriteLog(){
   // 根据写作记录自动同步到 write_log，供统计与复盘使用
   const all=getWrites();
@@ -1788,38 +1422,82 @@ function renderEnglish(){
   else renderQuery();
 }
 
-// BBC 每日精读（默认文章 + 实时查词 + 朗读/跟读 + 单词本联动）
-const DEFAULT_BBC_ARTICLE={
-  title:"How Mexican drug cartels have outsourced meth labs to Nigeria",
-  zhTitle:"墨西哥贩毒集团如何将冰毒实验室外包到尼日利亚",
-  date:"2026-07-29",
-  paragraphs:[
-    {en:"The Nigerian judge was formally dressed, the lawyers maintained legal decorum and protocol was followed – but this hearing was not in the comfortable confines of a Lagos courtroom, it was inside an alleged illicit drug laboratory in the thick of a dense forest. Three Mexicans and seven Nigerians were paraded in handcuffs, as Justice Musa Kakaki inspected the chemicals and equipment they were accused of using to produce methamphetamine, commonly known as meth or crystal meth. A bitter, pungent smell filled the air of the makeshift laboratory, thanks to a large drum of the liquid form of the drug that was crystallising.",
-     zh:"尼日利亚法官身着正式法袍，律师们保持法律礼仪，程序也按部就班——但这次听证并不在拉各斯舒适的法庭内，而是在一片茂密森林深处的涉嫌非法制毒实验室里。三名墨西哥人和七名尼日利亚人戴着手铐被押出，穆萨·卡奇法官正在检查他们被指控用于制造甲基苯丙胺（俗称冰毒或晶体冰毒）的化学品和设备。临时实验室里弥漫着刺鼻的苦味，因为一大桶液态毒品正在结晶。"},
-    {en:"This temporary move of the federal high court to a location a two-hour drive from Lagos was an unusual step for Nigeria's judicial system, but the National Drug Law Enforcement Agency (NDLEA) said it was necessary to understand the scale of the operation. When the suspects were arrested in May, the agency described it as the country's largest-ever meth bust. It said it discovered more than two tonnes of the drug worth some $360m (£270m).",
-     zh:"将联邦高等法院临时搬到距拉各斯两小时车程的地方，对尼日利亚司法系统来说不同寻常，但国家禁毒执法局（NDLEA）表示，有必要了解该行动的规模。嫌疑人于五月被捕，NDLEA称这是该国史上最大规模的冰毒查获行动，发现了价值约3.6亿美元（2.7亿英镑）的超过两吨毒品。"},
-    {en:"The raids underline a broader trend of Africa's, and particularly West Africa's, growing role in the global synthetic drugs trade and the shift by criminal cartels to use the continent, not just as a trafficking hub, but also as a production base. Mexican specialists in manufacturing methamphetamine, often described as \"cooks\", are increasingly being found working alongside locals in laboratories in Europe and Africa.",
-     zh:"这些突袭凸显了非洲、尤其是西非在全球合成毒品贸易中日益重要的角色，以及犯罪集团利用非洲大陆的转变——不仅是作为贩运枢纽，还作为生产基地。被称为“厨师”的墨西哥冰毒制造专家越来越多地出现在欧洲和非洲的实验室里，与当地人一起工作。"},
-    {en:"Meth production has become increasingly sophisticated over the last few decades. \"They perfected it, to the point now it is the highest purity, the highest potency version of meth,\" James Griego, who leads counter-narcotics operations for US-Africa Command, told the BBC. \"Anybody who is looking to consume methamphetamine, understands that the Mexican meth is the best in the world, for that purpose,\" Griego added.",
-     zh:"过去几十年，冰毒生产变得越来越精密。“他们已经将其完善到纯度最高、效力最强的版本，”美国非洲司令部（Africom）负责缉毒行动的詹姆斯·格里戈告诉 BBC。“任何想要吸食冰毒的人都知道，就这个用途而言，墨西哥冰毒是世界上最好的，”格里戈补充道。"},
-    {en:"Since 2023, there have been 14 Mexican-operated labs raided in Africa. Four of the five found this year were in Nigeria, according to Africom. Intelligence has linked some labs to Mexico's two biggest drug cartels: the Sinaloa Cartel and the Jalisco New Generation Cartel.",
-     zh:"自 2023 年以来，非洲已有 14 个墨西哥运营的实验室被突袭。据 Africom 称，今年发现的五个实验室中有四个在尼日利亚。情报已将其中一些实验室与墨西哥最大的两个贩毒集团——锡那罗亚集团和哈利斯科新一代集团——联系起来。"},
-    {en:"Unlike plant-based drugs, a synthetic drug like meth can be produced anywhere with the right chemicals and expertise. West Africa offers forested land for secluded sites, cheap labour, a large youth population, and access to Atlantic shipping routes.",
-     zh:"与可卡因或海洛因等植物类毒品不同，像冰毒这样的合成毒品只要有合适的化学品和专业知识就可以在任何地方生产。西非提供了森林覆盖的隐蔽场地、廉价劳动力、庞大的年轻人口，以及通往大西洋航运路线的便利。"},
-    {en:"In Europe, methamphetamine use rose 47% between 2014 and 2024. In east and south-east Asia, seizures reached a record high in 2024. \"It's a shortening of their supply line into Asia and a shortening of their pathway into Europe,\" Griego said.",
-     zh:"在欧洲，2014 年至 2024 年间冰毒使用量上升了 47%。在东亚和东南亚，2024 年查获量创下历史新高。“这缩短了他们进入亚洲的供应链，也缩短了进入欧洲的通路，”格里戈说。"},
-    {en:"With returning US pressure on Latin American cartels, experts believe tighter scrutiny of traditional trafficking routes may be driving cartels to diversify. The recent rise in raids on illicit labs in Africa could indicate that the cartels are becoming more entrenched on the continent.",
-     zh:"随着美国加大对拉丁美洲贩毒集团的压力，专家们认为，对传统贩运路线的更严格审查可能正促使集团实现多元化。非洲非法实验室突袭事件的近期增加，可能表明这些集团正在非洲大陆上越来越根深蒂固。"}
-  ]
-};
-
-function currentBBCArticle(){return LS.get('bbc_article',null)||DEFAULT_BBC_ARTICLE;}
+// BBC 每日精读（文章池每日轮换 + 实时查词 + 朗读/跟读 + 单词本联动）
+const BBC_ARTICLES=[
+  {
+    title:"How Mexican drug cartels have outsourced meth labs to Nigeria",
+    zhTitle:"墨西哥贩毒集团如何将冰毒实验室外包到尼日利亚",
+    paragraphs:[
+      {en:"The Nigerian judge was formally dressed, the lawyers maintained legal decorum and protocol was followed – but this hearing was not in the comfortable confines of a Lagos courtroom, it was inside an alleged illicit drug laboratory in the thick of a dense forest.",zh:"尼日利亚法官身着正式法袍，律师们保持法律礼仪，程序也按部就班——但这次听证并不在拉各斯舒适的法庭内，而是在一片茂密森林深处的涉嫌非法制毒实验室里。"},
+      {en:"Three Mexicans and seven Nigerians were paraded in handcuffs, as Justice Musa Kakaki inspected the chemicals and equipment they were accused of using to produce methamphetamine, commonly known as meth or crystal meth.",zh:"三名墨西哥人和七名尼日利亚人戴着手铐被押出，穆萨·卡奇法官正在检查他们被指控用于制造甲基苯丙胺（俗称冰毒或晶体冰毒）的化学品和设备。"},
+      {en:"This temporary move of the federal high court to a location a two-hour drive from Lagos was an unusual step for Nigeria's judicial system.",zh:"将联邦高等法院临时搬到距拉各斯两小时车程的地方，对尼日利亚司法系统来说不同寻常。"},
+      {en:"When the suspects were arrested in May, the agency described it as the country's largest-ever meth bust. It said it discovered more than two tonnes of the drug worth some $360m.",zh:"嫌疑人于五月被捕，NDLEA称这是该国史上最大规模的冰毒查获行动，发现了价值约3.6亿美元的超过两吨毒品。"},
+      {en:"The raids underline a broader trend of Africa's growing role in the global synthetic drugs trade and the shift by criminal cartels to use the continent as a production base.",zh:"这些突袭凸显了非洲在全球合成毒品贸易中日益重要的角色，以及犯罪集团利用非洲大陆作为生产基地的转变。"}
+    ]
+  },
+  {
+    title:"Why a daily walk can transform your health",
+    zhTitle:"为什么每天散步能改善健康",
+    paragraphs:[
+      {en:"Walking is one of the simplest and most underrated forms of exercise. It requires no equipment, no gym membership, and can be done almost anywhere.",zh:"散步是最简单、最被低估的运动形式之一。它不需要任何设备，不需要健身房会员，几乎可以在任何地方进行。"},
+      {en:"Studies show that just 30 minutes of brisk walking a day can reduce the risk of heart disease, stroke, and type 2 diabetes.",zh:"研究表明，每天只需快走30分钟，就能降低患心脏病、中风和2型糖尿病的风险。"},
+      {en:"Walking also boosts mental health. A short walk outdoors can lower stress hormones, improve mood, and help clear the mind.",zh:"散步还能促进心理健康。户外短走可以降低压力荷尔蒙，改善情绪，帮助理清思绪。"},
+      {en:"Experts suggest splitting walks into shorter chunks if time is tight. Three 10-minute walks can be as beneficial as one 30-minute session.",zh:"专家表示，如果时间紧张，可以把散步分成更短的几次。三次10分钟的散步与一次30分钟的散步同样有益。"},
+      {en:"The key is consistency. Making walking a daily habit is more important than speed or distance.",zh:"关键在于坚持。把散步变成日常习惯，比速度或距离更重要。"}
+    ]
+  },
+  {
+    title:"The science of sleep and why it matters",
+    zhTitle:"睡眠科学及其重要性",
+    paragraphs:[
+      {en:"Sleep is not just rest for the body; it is active recovery for the brain. During sleep, the brain clears waste and consolidates memories.",zh:"睡眠不仅仅是身体的休息，更是大脑的主动恢复。在睡眠期间，大脑会清除废物并巩固记忆。"},
+      {en:"Most adults need between seven and nine hours of sleep per night. Regularly getting less can affect mood, memory, and immune function.",zh:"大多数成年人每晚需要7到9小时的睡眠。长期睡眠不足会影响情绪、记忆和免疫功能。"},
+      {en:"A consistent bedtime helps regulate the body's internal clock. Going to bed and waking up at the same time every day improves sleep quality.",zh:"规律的入睡时间有助于调节身体的内部时钟。每天在同一时间睡觉和起床可以提高睡眠质量。"},
+      {en:"Screens before bed can interfere with sleep. The blue light from phones and computers reduces the production of melatonin, the sleep hormone.",zh:"睡前看屏幕会干扰睡眠。手机和电脑发出的蓝光会减少褪黑素（睡眠荷尔蒙）的分泌。"},
+      {en:"Small changes like dimming lights, avoiding caffeine in the evening, and keeping the bedroom cool can lead to better sleep.",zh:"调暗灯光、晚上避免咖啡因、保持卧室凉爽等小改变，都能带来更好的睡眠。"}
+    ]
+  },
+  {
+    title:"How to build a language learning habit",
+    zhTitle:"如何养成语言学习习惯",
+    paragraphs:[
+      {en:"Learning a new language is less about talent and more about consistent practice. Daily exposure beats occasional long sessions.",zh:"学习一门新语言与其说是天赋，不如说是坚持练习。每天接触一点胜过偶尔长时间学习。"},
+      {en:"Start with listening. Before speaking, train your ears to recognize sounds, rhythm, and common phrases.",zh:"从听力开始。在说之前，先训练耳朵识别声音、节奏和常用短语。"},
+      {en:"Do not fear mistakes. Errors are a natural part of learning and often help memory stick better.",zh:"不要害怕犯错。错误是学习的自然组成部分，通常能帮助记忆更牢固。"},
+      {en:"Spaced repetition is powerful. Reviewing words at increasing intervals helps move them into long-term memory.",zh:"间隔重复非常有效。以逐渐增加的间隔复习单词，有助于将它们存入长期记忆。"},
+      {en:"Finally, connect the language to your life. Use it to read news, listen to music, or describe your day.",zh:"最后，把语言与你的生活联系起来。用它读新闻、听音乐或描述你的一天。"}
+    ]
+  },
+  {
+    title:"The power of daily journaling",
+    zhTitle:"每日记录的力量",
+    paragraphs:[
+      {en:"Writing down your thoughts each day can reduce stress and improve mental clarity. It creates a quiet moment for self-reflection.",zh:"每天写下想法可以减轻压力，提高思维清晰度。它为自我反思创造了一个安静的时刻。"},
+      {en:"Journaling helps track goals over time. By reviewing past entries, you can see progress and identify repeating patterns.",zh:"记录有助于长期追踪目标。通过回顾过去的条目，你可以看到进步并发现重复出现的模式。"},
+      {en:"Morning pages are a popular practice. Writing three pages of free-flowing thoughts first thing can clear mental clutter.",zh:"晨间笔记是一种流行的做法。一早写下三页自由流动的想法，可以清理精神 clutter。"},
+      {en:"You do not need perfect grammar or long entries. Even a few sentences about your day can be meaningful.",zh:"你不需要完美的语法或长篇大论。即使是关于你一天的几句话也可能很有意义。"},
+      {en:"The real benefit comes from consistency. A short daily habit is more valuable than an occasional long essay.",zh:"真正的好处来自坚持。每天短小的习惯比偶尔的长篇大论更有价值。"}
+    ]
+  }
+];
+function getDailyBBCArticle(){
+  const saved=LS.get('bbc_article',null);
+  const today=todayStr();
+  if(saved&&saved.date===today)return saved;
+  const idx=Math.floor(new Date(today).getTime()/86400000)%BBC_ARTICLES.length;
+  const a=JSON.parse(JSON.stringify(BBC_ARTICLES[idx]));
+  a.date=today;
+  LS.set('bbc_article',a);
+  return a;
+}
+function currentBBCArticle(){return getDailyBBCArticle();}
+function resetBBCArticle(){const list=BBC_ARTICLES;const cur=currentBBCArticle();let idx=list.findIndex(x=>x.title===cur.title);if(idx<0)idx=0;idx=(idx+1)%list.length;const a=JSON.parse(JSON.stringify(list[idx]));a.date=todayStr();LS.set('bbc_article',a);renderEnglish();}
 function allArticleText(a){return a.paragraphs.map(p=>p.en).join(' ');}
 
 function renderBBC(){
   const a=currentBBCArticle();
   let h='<div class="card"><div class="row" style="justify-content:space-between"><h3 style="margin:0">BBC 每日精读</h3>';
-  h+='<button class="btn sm" onclick="doFetchBBC()">↻ 刷新头条</button></div>';
+  h+='<div class="row" style="gap:8px"><button class="btn sm" onclick="resetBBCArticle()">🔄 换一篇</button><button class="btn sm" onclick="pasteArticle()">📋 粘贴文章</button></div></div>';
   h+='<div class="note" id="bbcinfo">'+esc(a.date)+' · 点击英文单词即可查词并加入单词本</div></div>';
 
   h+='<div class="card">';
@@ -1925,8 +1603,8 @@ function followArticle(){
     h+='<div class="row" style="justify-content:center;margin-top:18px;gap:10px;flex-wrap:wrap">';
     h+='<button class="btn primary" onclick="speakText(\''+esc(s.en).replace(/'/g,"\\'")+'\')">🔊 听原句</button>';
     h+='<button class="btn pink" onclick="speakThenPrompt(\''+esc(s.en).replace(/'/g,"\\'")+'\')">🗣️ 听后跟读</button>';
-    h+='<button class="btn ghost" '+(idx>0?'onclick="prevSentence()"':'disabled')+')">← 上一句</button>';
-    h+='<button class="btn ghost" '+(idx<sentences.length-1?'onclick="nextSentence()"':'disabled')+')">下一句 →</button>';
+    h+='<button class="btn ghost" '+(idx>0?'onclick="prevSentence()"':'disabled')+'>← 上一句</button>';
+    h+='<button class="btn ghost" '+(idx<sentences.length-1?'onclick="nextSentence()"':'disabled')+'>下一句 →</button>';
     h+='<button class="btn ghost" onclick="renderEnglish()">返回</button>';
     h+='</div></div>';
     $('content').innerHTML=h;
@@ -1936,7 +1614,7 @@ function followArticle(){
 }
 function nextSentence(){if(window._followIdx<window._followSentences.length-1){window._followIdx++;window._followRender();}}
 function prevSentence(){if(window._followIdx>0){window._followIdx--;window._followRender();}}
-function speakThenPrompt(t){speakText(t);setTimeout(()=>{if(confirm('现在跟读！准备好了吗？')){/* user can speak; no browser API for scoring */}},1800);}
+function speakThenPrompt(t){speakText(t);setTimeout(()=>{toast('请跟读这句话 🎤');},800);}
 
 function pasteArticle(){
   showModal({
@@ -2495,7 +2173,7 @@ function renderOverview(){
     +'<text x="60" y="57" text-anchor="middle" font-size="26" fill="#2a3440" font-weight="700">'+pct+'%</text>'
     +'<text x="60" y="80" text-anchor="middle" font-size="12" fill="#8a93a6">今日打卡</text></svg>';
   let sc='<div class="ovgrid sc">';
-  [['plan','✓ 每日打卡'],['invest','📈 价值投资'],['write','✎ 写作入口'],['english','🔤 英语学习'],['body','❤ 身体管理'],['read','📚 阅读任务'],['focus','⏱ 专注记录'],['report','📊 回顾报告']].forEach(m=>{
+  [['plan','✓ 每日打卡'],['body','❤ 身体管理'],['write','✎ 写作入口'],['read','📚 阅读任务'],['english','🔤 英语学习'],['focus','⏱ 专注记录'],['report','📊 回顾报告']].forEach(m=>{
     sc+='<button class="scbtn" onclick="go(\''+m[0]+'\')"><span class="sic">'+m[1].split(' ')[0]+'</span><span class="stx">'+m[1].split(' ').slice(1).join(' ')+'</span></button>';
   });
   sc+='</div>';
@@ -2556,7 +2234,7 @@ function init(){
   if(!LS.get('plan_tpl',null)) LS.set('plan_tpl',DEFAULT_PLAN);
   const hash=location.hash.replace('#','');
   if(MODULES.some(m=>m.id===hash)) go(hash);
-  else go('overview');
+  else go('plan');
   autoFetchOnStart();
   startKeepAlive();
   checkReminders();
