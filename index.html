@@ -2344,16 +2344,26 @@ function qFollow(){
 /* ================================================================
    模块 7：专注（番茄钟）
    ================================================================ */
-let timer=null,timerState={mode:'work',left:0,total:0,running:false};
+let timer=null,timerState={mode:'work',left:0,total:0,running:false,endTs:0};
 function getFocusSet(){return LS.get('focus_set',{work:25,break:5});}
 function getFocusLog(){return LS.get('focus_log',[]);}
+function saveTimerState(){LS.set('timer_state',{mode:timerState.mode,left:timerState.left,running:timerState.running,endTs:timerState.endTs});}
+function loadTimerState(){const s=LS.get('timer_state',null);if(!s)return false;timerState.mode=s.mode||'work';timerState.left=(typeof s.left==='number')?s.left:0;timerState.running=!!s.running;timerState.endTs=s.endTs||0;return true;}
 
+function ensureTimerRestored(){
+  if(window._timerRestored)return;
+  window._timerRestored=true;
+  loadTimerState();
+  if(timerState.running)startTick();
+}
 function renderFocus(){
   $('content').innerHTML='';
   const s=getFocusSet();
+  ensureTimerRestored();
+  if(timerState.running){timerState.left=Math.max(0,Math.round((timerState.endTs-Date.now())/1000));}
   const log=getFocusLog().filter(x=>x.date===todayStr());
   const mins=log.reduce((a,x)=>a+(x.dur||0),0);
-  if(!timerState.left){timerState.left=s.work*60;timerState.total=s.work*60;}
+  if(!timerState.left){timerState.left=s[timerState.mode]*60;timerState.total=timerState.left;}
 
   const tasks=getFocusTasks()[todayStr()]||[];
   let ph='<div class="card"><h3>今日高价值任务</h3>';
@@ -2393,49 +2403,65 @@ function renderFocus(){
   $('content').insertAdjacentHTML('beforeend',h);
 }
 function fmtTime(s){const m=Math.floor(s/60),sec=s%60;return(m<10?'0':'')+m+':'+(sec<10?'0':'')+sec;}
+function startTick(){if(timer)clearInterval(timer);timer=setInterval(tickTimer,500);tickTimer();}
+function tickTimer(){
+  if(!timerState.running)return;
+  const left=Math.round((timerState.endTs-Date.now())/1000);
+  timerState.left=Math.max(0,left);
+  const el=$('tmDisplay');if(el)el.textContent=fmtTime(timerState.left);
+  if(left<=0)completeTimer();
+}
 function toggleTimer(){
   if(timerState.running){
-    clearInterval(timer);timerState.running=false;
+    // 暂停：按真实时间戳结算剩余秒数
+    timerState.left=Math.max(0,Math.round((timerState.endTs-Date.now())/1000));
+    timerState.running=false;
+    if(timer)clearInterval(timer);
+    saveTimerState();
   } else {
+    // 开始/继续：以结束时间戳为基准，锁屏/切后台后回来仍准确
+    if(!timerState.left)timerState.left=getFocusSet()[timerState.mode]*60;
+    timerState.endTs=Date.now()+timerState.left*1000;
     timerState.running=true;
-    timer=setInterval(()=>{
-      timerState.left--;
-      if(timerState.left<=0){completeTimer();return;}
-      const el=$('tmDisplay');if(el)el.textContent=fmtTime(timerState.left);
-    },1000);
+    startTick();
+    saveTimerState();
   }
   // update button text without full re-render
   const btn=$('toggleBtn');if(btn)btn.textContent=timerState.running?'⏸ 暂停':'▶ 开始';
 }
 function completeTimer(){
-  clearInterval(timer);timerState.running=false;
+  if(timer)clearInterval(timer);timerState.running=false;timerState.endTs=0;
   const s=getFocusSet();const log=getFocusLog();
   const dur=timerState.mode==='work'?s.work:s.break;
   const sel=$('ft_sel');let taskId='',taskText='';
   if(sel&&sel.value){const opt=sel.options[sel.selectedIndex];taskId=sel.value;taskText=opt?opt.text:'';}
   log.push({date:todayStr(),start:nowHMS(),dur,mode:timerState.mode,taskId,taskText});
   LS.set('focus_log',log);
-  // voice notification
+  // 语音提醒（锁屏时系统会挂起，唤醒后才会响，属浏览器限制）
   if('speechSynthesis'in window){
-    const u=new SpeechSynthesisUtterance(timerState.mode==='work'?'专注结束，休息一下吧 ☕':'休息结束，继续加油 🔥');
-    u.lang='zh-CN';window.speechSynthesis.speak(u);
+    try{const u=new SpeechSynthesisUtterance(timerState.mode==='work'?'专注结束，休息一下吧 ☕':'休息结束，继续加油 🔥');u.lang='zh-CN';window.speechSynthesis.speak(u);}catch(e){}
   }
   timerState.mode=timerState.mode==='work'?'break':'work';
   timerState.left=(timerState.mode==='work'?s.work:s.break)*60;
+  saveTimerState();
   renderFocus();
 }
 function switchTimerMode(){
-  if(timer)clearInterval(timer);timerState.running=false;
+  if(timer)clearInterval(timer);timerState.running=false;timerState.endTs=0;
   const s=getFocusSet();
   timerState.mode=timerState.mode==='work'?'break':'work';
   timerState.left=(timerState.mode==='work'?s.work:s.break)*60;
+  saveTimerState();
   renderFocus();
 }
 function resetTimer(){
-  if(timer)clearInterval(timer);timerState.running=false;
+  if(timer)clearInterval(timer);timerState.running=false;timerState.endTs=0;
   const s=getFocusSet();timerState.mode='work';timerState.left=s.work*60;
+  saveTimerState();
   renderFocus();
 }
+// 锁屏/切后台后回到页面时，立即按真实时间校正显示与完成状态
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&timerState.running)tickTimer();});
 
 
 /* ================================================================
