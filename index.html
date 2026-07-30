@@ -1893,7 +1893,7 @@ function openLibrary(){
   const l=getMyArticles();
   let h='<div class="modal-box"><h3>我的语料库</h3>';
   h+='<div class="m-note">粘贴的文章会保存在这里，可随时切换阅读或删除。</div>';
-  h+='<div class="row" style="margin:10px 0"><button class="btn primary sm" onclick="pasteToLibrary()">＋ 粘贴新文章</button></div>';
+  h+='<div class="row" style="margin:10px 0;gap:8px"><button class="btn primary sm" onclick="pasteToLibrary()">＋ 粘贴新文章</button><button class="btn sm" onclick="importFromURL()">🔗 从链接抓取</button></div>';
   if(!l.length)h+='<div class="empty">还没有保存的文章</div>';
   else{
     h+='<div style="max-height:50vh;overflow:auto">';
@@ -1941,10 +1941,108 @@ function fallbackCopy(text){
   document.body.removeChild(ta);
 }
 
+/* ---- 从链接一键抓取网页转语料 ---- */
+function importFromURL(){
+  var ov=$('modalOverlay');
+  ov.innerHTML='<div class="modal-box"><h3>从链接抓取文章</h3>'+
+    '<div class="m-note">粘贴文章网页链接，自动抓取正文并翻译成中文，转为可阅读的语料。支持 BBC、VOA、新闻、博客等英文站点。抓取失败时可改用「粘贴」手动添加。</div>'+
+    '<input id="impURL" type="url" placeholder="https://... 文章链接" style="width:100%">'+
+    '<div class="modal-actions"><button class="btn ghost" onclick="closeModal()">取消</button><button class="btn primary" onclick="startImportFromURL()">抓取</button></div></div>';
+  ov.classList.add('show');
+  setTimeout(function(){var e=$('impURL');if(e)e.focus();},100);
+}
+function startImportFromURL(){
+  var url=($('impURL').value||'').trim();
+  if(url.indexOf('http://')!==0 && url.indexOf('https://')!==0){toast('请输入有效的 http(s) 链接');return;}
+  runFetchURL(url);
+}
+function openImportProgress(){
+  var ov=$('modalOverlay');window._importCancel=false;
+  ov.innerHTML='<div class="modal-box"><h3>从链接抓取</h3><div id="impStatus" class="note"><span class="spin"></span>准备中…</div><div class="modal-actions"><button class="btn ghost" onclick="cancelImport()">取消</button></div></div>';
+  ov.classList.add('show');
+}
+function cancelImport(){window._importCancel=true;closeModal();}
+function setImportStatus(s){var el=$('impStatus');if(el)el.innerHTML='<span class="spin"></span>'+esc(s).split('\n').join('<br>');}
+async function fetchViaProxy(url){
+  var ep='https://api.allorigins.win/get?url='+encodeURIComponent(url);
+  var r=await fetch(ep);
+  if(!r.ok)throw new Error('代理返回 '+r.status);
+  var j=await r.json();
+  var html=j&&j.contents;
+  if(!html){var ep2='https://api.allorigins.win/raw?url='+encodeURIComponent(url);var r2=await fetch(ep2);html=await r2.text();}
+  if(!html)throw new Error('抓取内容为空');
+  return html;
+}
+function normWS(s){return (s||'').replace(/ +/g,' ').trim();}
+function extractArticle(html,url){
+  var doc=new DOMParser().parseFromString(html,'text/html');
+  var title='';
+  var h1=doc.querySelector('h1');if(h1)title=normWS(h1.textContent);
+  if(!title){var t=doc.querySelector('title');if(t)title=normWS(t.textContent);}
+  ['script','style','noscript','iframe','svg','button','form','nav','header','footer','aside','figure'].forEach(function(s){var els=doc.querySelectorAll(s);for(var i=0;i<els.length;i++)els[i].remove();});
+  var root=doc.querySelector('article')||doc.querySelector('main')||doc.querySelector('.post-content,.article-content,.entry-content,.content-article,[itemprop="articleBody"],.article-body,.post__body');
+  if(!root)root=doc.body;
+  var paras=[];
+  var nodes=root.querySelectorAll('p,li,blockquote,h2,h3');
+  for(var i=0;i<nodes.length;i++){
+    var t=normWS(nodes[i].textContent);
+    if(t.length>40)paras.push(t);
+  }
+  var out=[];
+  for(var k=0;k<paras.length;k++){if(k===0||paras[k]!==paras[k-1])out.push(paras[k]);}
+  paras=out;
+  if(!paras.length){var tb=normWS(root.textContent);if(tb)paras=[tb];}
+  if(paras.length>40)paras=paras.slice(0,40);
+  return {title:title||url,paras:paras};
+}
+function hasCJK(s){for(var i=0;i<s.length;i++){var c=s.charCodeAt(i);if(c>=0x4e00&&c<=0x9fff)return true;}return false;}
+async function translateEN2ZH(text){
+  if(hasCJK(text))return '';
+  var q=text.slice(0,500);
+  var u='https://api.mymemory.translated.net/get?langpair=en|zh-CN&q='+encodeURIComponent(q);
+  var r=await fetch(u);
+  if(!r.ok)return '';
+  var j=await r.json();
+  var tr=j&&j.responseData&&j.responseData.translatedText;
+  if(!tr)return '';
+  if(/MYMEMORY WARNING|QUOTA|UNKNOWN/i.test(tr))return '';
+  return tr;
+}
+async function runFetchURL(url){
+  openImportProgress();
+  try{
+    setImportStatus('正在抓取网页…');
+    var html=await fetchViaProxy(url);
+    if(window._importCancel)return;
+    setImportStatus('正在解析正文…');
+    var ex=extractArticle(html,url);
+    if(!ex.paras.length)throw new Error('未找到可读正文');
+    setImportStatus('抓取成功，共 '+ex.paras.length+' 段，正在翻译中文…');
+    var paragraphs=[];var fail=0;
+    for(var i=0;i<ex.paras.length;i++){
+      if(window._importCancel)return;
+      setImportStatus('翻译中 '+(i+1)+'/'+ex.paras.length+' …');
+      var zh='';
+      try{zh=await translateEN2ZH(ex.paras[i]);}catch(e){zh='';}
+      if(!zh)fail++;
+      paragraphs.push({en:ex.paras[i],zh:zh||''});
+    }
+    if(window._importCancel)return;
+    var art={id:'m'+Date.now(),title:ex.title.slice(0,80),zhTitle:fail>=ex.paras.length?'自定义文章（英文）':'自定义文章',date:todayStr(),paragraphs:paragraphs,src:url};
+    var l=getMyArticles();l.push(art);LS.set('my_articles',l);
+    closeModal();
+    selectArticle('m_'+art.id);
+    toast('已抓取并保存：'+ex.title.slice(0,30));
+  }catch(e){
+    var el=$('impStatus');
+    if(el)el.innerHTML='抓取失败：'+esc(e.message||'网络错误')+'<br>可改用「粘贴」手动添加。<div class="modal-actions" style="margin-top:10px"><button class="btn primary" onclick="closeModal()">知道了</button></div>';
+  }
+}
+
 function renderBBC(){
   const a=currentBBCArticle();
   let h='<div class="card"><div class="row" style="justify-content:space-between"><h3 style="margin:0">BBC 每日精读</h3>';
-  h+='<div class="row" style="gap:8px"><button class="btn sm" onclick="resetBBCArticle()">🔄 换一篇</button><button class="btn sm" onclick="pasteToLibrary()">📋 粘贴</button><button class="btn sm" onclick="openLibrary()">📚 语料库</button></div></div>';
+  h+='<div class="row" style="gap:8px"><button class="btn sm" onclick="resetBBCArticle()">🔄 换一篇</button><button class="btn sm" onclick="pasteToLibrary()">📋 粘贴</button><button class="btn sm" onclick="importFromURL()">🔗 抓取链接</button><button class="btn sm" onclick="openLibrary()">📚 语料库</button></div></div>';
   h+='<div class="row" style="margin:6px 0"><select id="artPicker" class="btn sm" onchange="selectArticle(this.value)" style="max-width:100%;width:100%"></select></div>';
   h+='<div class="note" id="bbcinfo">'+esc(a.date)+' · 点击英文单词即可查词并加入单词本</div></div>';
 
