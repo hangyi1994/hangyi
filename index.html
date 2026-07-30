@@ -1358,11 +1358,18 @@ function renderAchievement(){
 }
 function addDone(){
   const text=$('d_text').value.trim();if(!text)return;
+  const id=uid();
+  const date=$('d_date').value;
+  const cat=$('d_cat').value;
   const d=getDoneList();
-  d.push({id:uid(),date:$('d_date').value,cat:$('d_cat').value,text});
-  LS.set('done_list',d);renderWrite();
+  d.push({id,date,cat,text});
+  LS.set('done_list',d);
+  const w=getWrites();
+  w.push({id,type:'achievement',title:(text.length>20?text.slice(0,20)+'…':text),body:text,date});
+  LS.set('writes',w);syncWriteLog();
+  renderWrite();
 }
-function delDone(i){const d=getDoneList();d.splice(i,1);LS.set('done_list',d);renderWrite();}
+function delDone(i){const d=getDoneList();const id=d[i].id;d.splice(i,1);LS.set('done_list',d);const w=getWrites().filter(x=>x.id!==id);LS.set('writes',w);syncWriteLog();renderWrite();}
 
 // 选题推荐（自媒体转化灵感）
 function renderTopics(){
