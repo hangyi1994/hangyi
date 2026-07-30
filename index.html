@@ -303,7 +303,7 @@ const MODULES=[
   {id:'focus',   name:'专注记录',ic:'⏱'},
   {id:'settings',name:'设置',ic:'⚙'},
 ];
-let curMod='overview';
+let curMod='';
 
 /* ============ navigation ============ */
 function buildNav(){
@@ -647,46 +647,56 @@ function renderBody(){
 // ---- 睡眠（标准：21:00-23:00 早睡，7-10h 时长达标）----
 function getSleepLogs(){return LS.get('sleep',[]);}
 
+function fmtMin(m){
+  if(m==null||isNaN(m))return '—';
+  const h=Math.floor(m/60),mn=m%60;
+  return h+'h'+(mn?mn+'m':'');
+}
+function calcSleepMin(bed,wake){
+  if(!bed||!wake)return null;
+  const [bh,bm]=bed.split(':').map(Number),[wh,wm]=wake.split(':').map(Number);
+  let m=(wh*60+wm)-(bh*60+bm);if(m<0)m+=1440;return m;
+}
+function isEarly(bed){return bed>='21:00'&&bed<='23:59';}
+function isDurOk(min){return min!=null&&min>=420&&min<=600;}
+
 function renderSleep(){
   const logs=getSleepLogs();
   const today=logs.find(l=>l.date===todayStr())||{};
-  const calcDur=(bed,wake)=>{
-    if(!bed||!wake)return null;
-    const [bh,bm]=bed.split(':').map(Number),[wh,wm]=wake.split(':').map(Number);
-    let m=(wh*60+wm)-(bh*60+bm);if(m<0)m+=1440;return m;
-  };
+  const autoMin=calcSleepMin(today.bed,today.wake);
+  const manMin=today.dur!=null?Math.round(today.dur*60):null;
 
-  const autoDur=calcDur(today.bed,today.wake);
-  const durVal=today.dur!=null?today.dur:(autoDur!=null?autoDur/60:null);
-  let h='<div class="card"><h3>睡眠记录</h3><div class="row">';
+  let h='<div class="card"><h3>睡眠记录</h3><div class="row" style="flex-wrap:wrap;gap:8px">';
   h+='<input id="sl_bed" type="time" value="'+(today.bed||'22:30')+'" style="max-width:130px" placeholder="入睡">';
   h+='<input id="sl_wake" type="time" value="'+(today.wake||'07:00')+'" style="max-width:130px" placeholder="起床">';
-  h+='<input id="sl_dur" type="number" step="0.1" placeholder="时长(h)" value="'+(durVal!=null?durVal:'')+'" style="max-width:110px" title="手动输入睡眠时长，留空则按入睡/起床自动计算">';
+  h+='<input id="sl_dur" type="number" step="0.1" placeholder="手动时长(h，含午休)" value="'+(today.dur!=null?today.dur:'')+'" style="max-width:160px" title="手动输入含午休的总睡眠时长，留空则只按入睡/起床自动计算">';
   h+='<button class="btn primary" onclick="saveSleep()">保存今日</button></div>';
 
-  if(durVal!=null){
-    const durMin=Math.round(durVal*60);
-    const early=today.bed>='21:00'&&today.bed<='23:59';
-    const durOk=durMin>=420&&durMin<=600;
-    h+='<div class="row" style="flex-wrap:wrap;margin-top:8px">';
-    h+='<span class="chip on">时长 '+Math.floor(durMin/60)+'h'+(durMin%60)+'m</span>';
-    h+='<span class="chip '+(early?'on':'')+'">早睡'+(early?' ✓':' (21点前)')+'</span>';
-    h+='<span class="chip '+(durOk?'on':'')+'">时长达标'+(durOk?' ✓':' (7-10h)')+'</span>';
-    h+='</div>';
-  }
-  h+='<div class="note">早睡标准：21:00–23:00 入睡；时长达标：7–10 小时。时长可手动输入（单位：小时），留空则按入睡/起床自动计算。</div></div>';
+  h+='<div class="row" style="flex-wrap:wrap;margin-top:10px;gap:8px">';
+  h+='<span class="chip '+(isDurOk(autoMin)?'on':'')+'">自动时长 '+fmtMin(autoMin)+(isDurOk(autoMin)?' ✓':'')+'</span>';
+  h+='<span class="chip '+(isDurOk(manMin)?'on':'')+'">手动时长 '+fmtMin(manMin)+(isDurOk(manMin)?' ✓':'')+'</span>';
+  h+='<span class="chip '+(isEarly(today.bed)?'on':'')+'">早睡'+(isEarly(today.bed)?' ✓':' (21-24点)')+'</span>';
+  h+='</div>';
+  h+='<div class="note">早睡标准：21:00–23:59 入睡；时长达标：7–10 小时。自动时长按入睡/起床计算；手动时长可包含午休，任一达标即算完成。</div></div>';
 
   // 近7日列表
   h+='<div class="card"><h3>近 7 日</h3>';
-  const recent=logs.slice().reverse().slice(0,7);
+  const recent=logs.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,7);
   if(!recent.length)h+='<div class="empty">暂无记录</div>';
-  recent.forEach(l=>{
-    const d=l.dur!=null?Math.round(l.dur*60):calcDur(l.bed,l.wake);
-    const early=l.bed>='21:00'&&l.bed<='23:59';
-    const durOk=d>=420&&d<=600;
+  recent.forEach((l,i)=>{
+    const auto=calcSleepMin(l.bed,l.wake);
+    const man=l.dur!=null?Math.round(l.dur*60):null;
+    const autoOk=isDurOk(auto),manOk=isDurOk(man);
+    const early=isEarly(l.bed);
     h+='<div class="item"><div class="txt">'+l.date+' · '+l.bed+' → '+l.wake+'</div>';
-    h+='<div class="meta">'+(d?Math.floor(d/60)+'h'+(d%60)+'m':'—')
-      +' '+(early?'🌙':'')+(durOk?'✓':'')+'</div></div>';
+    h+='<div class="meta">';
+    h+='<span class="chip">自动 '+fmtMin(auto)+'</span>';
+    h+='<span class="chip">手动 '+fmtMin(man)+'</span>';
+    h+='<span class="chip '+(early?'on':'')+'">'+(early?'🌙早睡 ✓':'早睡')+'</span>';
+    h+='<span class="chip '+(autoOk||manOk?'on':'')+'">时长 '+((autoOk&&manOk?'✓✓':(autoOk||manOk?'✓':'未达标'))||'')+'</span>';
+    h+='</div>';
+    h+='<span class="right"><button class="btn xs" onclick="editSleep(\''+l.date+'\')">编辑</button>';
+    h+='<button class="del" onclick="delSleep(\''+l.date+'\')">✕</button></span></div>';
   });
   h+='</div>';
   $('bodySub').innerHTML=h;
@@ -702,6 +712,28 @@ function saveSleep(){
   if(i>=0)logs[i]=o;else logs.push(o);
   LS.set('sleep',logs);renderSleep();
 }
+function editSleep(date){
+  const logs=getSleepLogs();
+  const l=logs.find(x=>x.date===date);if(!l)return;
+  showModal({
+    title:'编辑睡眠记录',
+    note:l.date,
+    fields:[
+      {id:'bed',type:'time',label:'入睡',value:l.bed||''},
+      {id:'wake',type:'time',label:'起床',value:l.wake||''},
+      {id:'dur',type:'number',step:0.1,label:'手动时长（含午休，小时）',value:l.dur!=null?l.dur:''}
+    ],
+    onSave:function(f){
+      const idx=logs.findIndex(x=>x.date===date);
+      if(idx<0)return;
+      logs[idx].bed=f.bed||logs[idx].bed;
+      logs[idx].wake=f.wake||logs[idx].wake;
+      logs[idx].dur=f.dur!==''&&f.dur!=null?Math.round(parseFloat(f.dur)*100)/100:null;
+      LS.set('sleep',logs);renderSleep();
+    }
+  });
+}
+function delSleep(date){const logs=getSleepLogs().filter(x=>x.date!==date);LS.set('sleep',logs);renderSleep();}
 
 // ---- 锻炼（今日 + 近7日 双视图）----
 let exView='today'; // today | week
@@ -1198,8 +1230,8 @@ function viewText(title,body){
     '<div class="modal-actions"><button class="btn primary" onclick="closeModal()">关闭</button></div></div>';
   ov.classList.add('show');
 }
-function viewWrite(i){const w=getWrites()[i];if(!w)return;const ov=$('modalOverlay');ov.innerHTML='<div class="modal-box"><h3>'+esc((w.title||'(无标题)')+' · '+w.date)+'</h3>'+'<div class="m-note">'+((w.body||'').length+' 字 · 只读预览，点「编辑」可直接修改')+'</div>'+'<div style="white-space:pre-wrap;max-height:58vh;overflow:auto;font-size:16px;line-height:1.85;padding:14px;border:1.5px solid var(--line);border-radius:12px;background:var(--bg1)">'+esc(w.body||'')+'</div>'+'<div class="modal-actions"><button class="btn ghost" onclick="editWrite('+i+')">编辑</button><button class="btn primary" onclick="closeModal()">关闭</button></div></div>';ov.classList.add('show');}
-function editWrite(i){const w=getWrites()[i];if(!w)return;showModal({title:'编辑写作',note:'修改后点保存即可。',fields:[{id:'title',type:'text',placeholder:'标题（可选）',value:w.title||''},{id:'body',type:'textarea',placeholder:'内容…',value:w.body||''},{id:'date',type:'date',label:'日期',value:w.date||todayStr()}],onSave:function(f){if(!f.body&&!f.title)return;w.title=f.title.trim();w.body=f.body.trim();w.date=f.date||todayStr();LS.set('writes',getWrites());syncWriteLog();renderWrite();toast('已保存');}});}
+function viewWrite(i){const w=getWrites()[i];if(!w)return;const ov=$('modalOverlay');ov.innerHTML='<div class="modal-box"><h3>'+esc((w.title||'无题')+' · '+w.date)+'</h3>'+'<div class="m-note">'+((w.body||'').length+' 字 · 只读预览，点「编辑」可直接修改')+'</div>'+'<div style="white-space:pre-wrap;max-height:58vh;overflow:auto;font-size:16px;line-height:1.85;padding:14px;border:1.5px solid var(--line);border-radius:12px;background:var(--bg1)">'+esc(w.body||'')+'</div>'+'<div class="modal-actions"><button class="btn ghost" onclick="editWrite('+i+')">编辑</button><button class="btn primary" onclick="closeModal()">关闭</button></div></div>';ov.classList.add('show');}
+function editWrite(i){const all=getWrites();const w=all[i];if(!w)return;showModal({title:'编辑写作',note:'修改后点保存即可。',fields:[{id:'title',type:'text',placeholder:'标题（可选）',value:w.title||''},{id:'body',type:'textarea',placeholder:'内容…',value:w.body||''},{id:'date',type:'date',label:'日期',value:w.date||todayStr()}],onSave:function(f){if(!f.body&&!f.title)return;w.title=f.title.trim();w.body=f.body.trim();w.date=f.date||todayStr();LS.set('writes',all);syncWriteLog();renderWrite();toast('已保存');}});}
 function viewNote(i){const notes=LS.get('book_notes',[]);const n=notes[i];if(!n)return;const book=getBooks().find(x=>x.id===n.bookId);viewText('读书笔记 · '+(book?book.title:'(未知)')+' · '+n.date,n.body);}
 function viewCard(i){const c=getCards()[i];if(!c)return;const book=getBooks().find(x=>x.id===c.bookId);viewText('卡片笔记'+(book?' · '+book.title:'')+(c.tags?' · #'+c.tags:''),c.text);}
 
@@ -1220,7 +1252,7 @@ function renderWrite(){
   ck+='<span class="chip">本周 '+ws.week+' 字</span><span class="chip">本月 '+ws.month+' 字</span><span class="chip">年度 '+ws.year+' 字</span><span class="chip">连续 '+ws.streak+' 天</span></div></div>';
   let h=ck+'<div class="card"><h3>写作入口</h3><div class="subtabs">';
   [
-    ['all','全部'],['emotion','情绪'],['inspire','灵感'],['invest','投资'],['review','影评'],['topics','自媒体转化']
+    ['all','全部'],['emotion','情绪'],['inspire','灵感'],['achievement','成就'],['invest','投资'],['review','影评'],['topics','自媒体转化']
   ].forEach(t=>{
     h+='<button class="'+(writeTab===t[0]?'on':'')+'" data-wtab="'+t[0]+'">'+t[1]+'</button>';
   });
@@ -1230,13 +1262,14 @@ function renderWrite(){
     btn.onclick=()=>{writeTab=btn.dataset.wtab;renderWrite();};
   });
   if(writeTab==='topics')renderTopics();
+  else if(writeTab==='achievement')renderAchievement();
   else renderWriteList(writeTab);
 }
 function setWriteTab(t){writeTab=t;renderWrite();}
 
 // 通用写作列表渲染
 function renderWriteList(type){
-  const typeNames={all:'全部',emotion:'情绪',inspire:'灵感',invest:'投资',review:'影评'};
+  const typeNames={all:'全部',emotion:'情绪',inspire:'灵感',achievement:'成就',invest:'投资',review:'影评'};
   const name=typeNames[type]||type;
   const list=getWrites().filter(w=>type==='all'||w.type===type).slice().sort((a,b)=>b.date.localeCompare(a.date));
 
@@ -1247,9 +1280,9 @@ function renderWriteList(type){
   if(!list.length)h+='<div class="empty">还没有，写一篇吧 ✍️</div>';
   else{
     list.forEach(w=>{
-      const typeTag={emotion:'情绪',inspire:'灵感',invest:'投资',review:'影评',booknote:'读书笔记',diary:'日记'}[w.type]||w.type;
+      const typeTag={emotion:'情绪',inspire:'灵感',achievement:'成就',invest:'投资',review:'影评',booknote:'读书笔记',diary:'日记'}[w.type]||w.type;
       h+='<div class="item" style="flex-direction:column;align-items:stretch" data-wid="'+w.id+'">';
-      h+='<div class="row"><b>'+esc(w.title||'(无标题)')+'</b>';
+      h+='<div class="row"><b>'+esc(w.title||'无题')+'</b>';
       h+='<span class="chip">'+typeTag+'</span>';
       h+='<span class="meta">'+w.date+' · '+(w.body||'').length+' 字</span>';
       h+='<span class="right"><button class="btn xs" onclick="viewWriteById(\''+w.id+'\')">打开</button>';
@@ -1264,7 +1297,7 @@ function renderWriteList(type){
   $('content').insertAdjacentHTML('beforeend',h);
 }
 function addWrite(type){
-  const names={emotion:'情绪',inspire:'灵感',review:'影评',invest:'投资',booknote:'读书笔记',diary:'日记'};
+  const names={emotion:'情绪',inspire:'灵感',achievement:'成就',review:'影评',invest:'投资',booknote:'读书笔记',diary:'日记'};
   const name=names[type]||type;
   showModal({
     title:'写'+name,
@@ -1597,8 +1630,9 @@ function followArticle(){
     });
   });
   if(!sentences.length){alert('没有可跟读的句子');return;}
-  let idx=0;
+  window._followIdx=0;
   const render=()=>{
+    const idx=window._followIdx;
     const s=sentences[idx];
     const para=a.paragraphs.find(p=>p.en.includes(s.en.slice(0,30)))||{zh:''};
     let h='<div class="follow-mode">';
@@ -1614,7 +1648,7 @@ function followArticle(){
     h+='</div></div>';
     $('content').innerHTML=h;
   };
-  window._followSentences=sentences;window._followIdx=idx;window._followRender=render;
+  window._followSentences=sentences;window._followRender=render;
   render();
 }
 function nextSentence(){if(window._followIdx<window._followSentences.length-1){window._followIdx++;window._followRender();}}
@@ -2170,7 +2204,7 @@ function renderOverview(){
   if(rp.weekly!==wk)banner+='<div class="banner"><span>📊 新一周开始了，看看上周回顾吧</span><button class="btn sm primary go" onclick="goReport(\'week\')">查看周报</button></div>';
   if(rp.monthly!==mo)banner+='<div class="banner"><span>📊 新一月到了，上月回顾已就绪</span><button class="btn sm pink go" onclick="goReport(\'month\')">查看月报</button></div>';
 
-  let h='<div style="text-align:center;font-size:19px;font-weight:700;letter-spacing:3px;color:var(--accent);padding:4px 0 14px">自律，向内自洽　向外自由</div>';
+  let h='<div style="text-align:center;font-size:19px;font-weight:700;letter-spacing:3px;color:var(--accent);padding:4px 0 14px">自律 向内自洽 向外自由</div>';
   h+=banner;
   h+='<div class="banner"><span>☀️ 你好，'+(prof.name||'航一')+'。今天也要好好照顾自己 ✨</span></div>';
 
