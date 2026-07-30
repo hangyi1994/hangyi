@@ -1471,6 +1471,11 @@ function renderEnglish(){
   if(engTab==='vocab')renderVocab();
   else if(engTab==='bbc')renderBBC();
   else renderQuery();
+  // 今日打卡卡片注入到顶部（子模块渲染后，确保始终在最新内容最上方）
+  const ec=isEngChecked(todayStr()),es=engStats();
+  const card='<div class="card" id="engCkCard"><h3>今日英语打卡</h3><div class="row"><button class="ck '+(ec?'on':'')+'" onclick="toggleEngToday()">'+(ec?'✓ 今日已学':'○ 今日未学')+'</button><span class="meta">本周 '+es.week+' 天 · 本月 '+es.month+' 天 · 年度 '+es.year+' 天</span></div></div>';
+  const old=c.querySelector('#engCkCard');
+  if(old)old.outerHTML=card; else c.insertAdjacentHTML('afterbegin',card);
 }
 
 // BBC 每日精读（文章池每日轮换 + 实时查词 + 朗读/跟读 + 单词本联动）
@@ -2399,6 +2404,14 @@ function readStats(){
   const l=getReadLog(),keys=Object.keys(l),ws=weekStart(),ym=todayStr().slice(0,7),yr=todayStr().slice(0,4);
   const cnt=f=>keys.filter(f).filter(k=>isReadChecked(k)).length;
   return {week:cnt(k=>k>=ws),month:cnt(k=>k.slice(0,7)===ym),year:cnt(k=>k.slice(0,4)===yr)};
+}
+/* ---- 英语：每日打卡 + 周/月统计 ---- */
+function getEngLog(){return LS.get('eng_log',{});}
+function isEngChecked(date){return !!getEngLog()[date];}
+function toggleEngToday(){const l=getEngLog();const t=todayStr();if(l[t])delete l[t];else l[t]=true;LS.set('eng_log',l);renderEnglish();}
+function engStats(){
+  const l=getEngLog(),keys=Object.keys(l).filter(k=>l[k]),ws=weekStart(),ym=todayStr().slice(0,7),yr=todayStr().slice(0,4);
+  return {week:keys.filter(k=>k>=ws).length,month:keys.filter(k=>k.slice(0,7)===ym).length,year:keys.filter(k=>k.slice(0,4)===yr).length};
 }
 /* ---- 写作：每日字数打卡 ---- */
 function getWriteLog(){return LS.get('write_log',{});}
